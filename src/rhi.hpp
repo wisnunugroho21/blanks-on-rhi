@@ -1203,25 +1203,24 @@ class GPUDevice {
 
     virtual void destroy() = 0;
 
-    GPUBuffer createBuffer(GPUBufferDescriptor descriptor);
-    GPUTexture createTexture(GPUTextureDescriptor descriptor);
-    GPUSampler createSampler(GPUSamplerDescriptor descriptor = {});
+    virtual GPUBuffer createBuffer(GPUBufferDescriptor descriptor) = 0;
+    virtual GPUTexture createTexture(GPUTextureDescriptor descriptor) = 0;
+    virtual GPUSampler createSampler(GPUSamplerDescriptor descriptor = {}) = 0;
 
-    GPUBindGroupLayout createBindGroupLayout(GPUBindGroupLayoutDescriptor descriptor);
-    GPUPipelineLayout createPipelineLayout(GPUPipelineLayoutDescriptor descriptor);
-    GPUBindGroup createBindGroup(GPUBindGroupDescriptor descriptor);
+    virtual GPUBindGroupLayout createBindGroupLayout(GPUBindGroupLayoutDescriptor descriptor) = 0;
+    virtual GPUPipelineLayout createPipelineLayout(GPUPipelineLayoutDescriptor descriptor) = 0;
+    virtual GPUBindGroup createBindGroup(GPUBindGroupDescriptor descriptor) = 0;
 
-    GPUShaderModule createShaderModule(GPUShaderModuleDescriptor descriptor);
-    GPUComputePipeline createComputePipeline(GPUComputePipelineDescriptor descriptor);
-    GPURenderPipeline createRenderPipeline(GPURenderPipelineDescriptor descriptor);
-    GPUComputePipeline createComputePipelineAsync(GPUComputePipelineDescriptor descriptor);
-    GPURenderPipeline createRenderPipelineAsync(GPURenderPipelineDescriptor descriptor);
+    virtual GPUShaderModule createShaderModule(GPUShaderModuleDescriptor descriptor) = 0;
+    virtual GPUComputePipeline createComputePipeline(GPUComputePipelineDescriptor descriptor) = 0;
+    virtual GPURenderPipeline createRenderPipeline(GPURenderPipelineDescriptor descriptor) = 0;
+    virtual GPUComputePipeline createComputePipelineAsync(GPUComputePipelineDescriptor descriptor) = 0;
+    virtual GPURenderPipeline createRenderPipelineAsync(GPURenderPipelineDescriptor descriptor) = 0;
 
-    GPUCommandEncoder createCommandEncoder(GPUCommandEncoderDescriptor descriptor = {});
-    GPURenderBundleEncoder createRenderBundleEncoder(GPURenderBundleEncoderDescriptor descriptor);
+    virtual GPUCommandEncoder createCommandEncoder(GPUCommandEncoderDescriptor descriptor = {}) = 0;
+    virtual GPURenderBundleEncoder createRenderBundleEncoder(GPURenderBundleEncoderDescriptor descriptor) = 0;
 
-    GPUQuerySet createQuerySet(GPUQuerySetDescriptor descriptor);
-
+    virtual GPUQuerySet createQuerySet(GPUQuerySetDescriptor descriptor) = 0;
 };
 
 // ===========================================================================================================================
