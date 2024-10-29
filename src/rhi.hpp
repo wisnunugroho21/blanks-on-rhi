@@ -1045,6 +1045,34 @@ namespace Rhi {
         virtual void endOcclusionQuery() = 0;
 
         virtual void end() = 0;
+    };
+
+    // ===========================================================================================================================
+    // Queue
+    // ===========================================================================================================================
+
+    struct QueueDescriptor {
+
+    };
+
+    class Queue {
+        QueueDescriptor desc;
+        virtual void submit(std::vector<CommandEncoder*> commandBuffers) = 0;
+
+        virtual void writeBuffer(
+            Buffer* buffer,
+            Uint64 bufferOffset,
+            void* data,
+            Uint64 dataOffset = 0,
+            Uint64 size
+        ) = 0;
+
+        virtual void writeTexture(
+            ImageCopyTexture destination,
+            void* data,
+            ImageDataLayout dataLayout,
+            Extent3D size
+        ) = 0;
     }; 
 
     // ===========================================================================================================================
