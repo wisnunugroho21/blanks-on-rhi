@@ -5,7 +5,7 @@
 #include <vector>
 #include <map>
 
-namespace Rhi {
+namespace RHI {
     // ===========================================================================================================================
     // Basic Type
     // ===========================================================================================================================
@@ -33,34 +33,46 @@ namespace Rhi {
         float g;
         float b;
         float a;
+
+        Color() : r{0.0f}, g{0.0f}, b{0.0f}, a{0.0f} {}
+        Color(float value) : r{value}, g{value}, b{value}, a{value} {}
+        Color(float _r, float _g, float _b, float _a) : r{_r}, g{_g}, b{_b}, a{_a} {}
+
+        bool operator == (const Color& other) const { 
+            return this->r == other.r &&
+                   this->g == other.g &&
+                   this->b == other.b &&
+                   this->a == other.a;
+        }
+
+		bool operator !=(const Color& other) const { return !(*this == other); }
+    };
+
+	struct Origin3D {
+        Uint32 x;
+        Uint32 y;
+        Uint32 z;
+
+		Origin3D() : x{0.0f}, y{0.0f}, z{0.0f} {}
+		Origin3D(float _x, float _y, float _z) : x{_x}, y{_y}, z{_z} {}
+
+        bool operator == (const Origin3D& other) const { 
+            return this->x == other.x &&
+                   this->y == other.y &&
+                   this->z == other.z;
+        }
+
+		bool operator !=(const Origin3D& other) const { return !(*this == other); }
     };
 
     struct Extent3D {
         Uint32 width;
         Uint32 height = 1;
         Uint32 depth = 1;
-    };
 
-    struct Origin3D {
-        Uint32 x = 0;
-        Uint32 y = 0;
-        Uint32 z = 0;
-    };
-
-    struct Viewport {
-        float x;
-        float y;
-        float width;
-        float height;
-        float minDepth;
-        float maxDepth;
-    };
-
-    struct ScissorRect {
-        float x;
-        float y;
-        float width;
-        float height;
+		constexpr Extent3D& setWidth(Uint32 value) { this->width = value; return *this; }
+		constexpr Extent3D& setHeight(Uint32 value) { this->height = value; return *this; }
+		constexpr Extent3D& setDepth(Uint32 value) { this->depth = value; return *this; }
     };
 
     // ===========================================================================================================================
@@ -98,13 +110,22 @@ namespace Rhi {
         Uint64 size;
         BufferUsageFlags usage;
         BufferLocation location;
+
+		constexpr BufferDescriptor& setSize(Uint64 value) { this->size = value; return *this; }
+		constexpr BufferDescriptor& setUsage(BufferUsageFlags value) { this->usage = value; return *this; }
+		constexpr BufferDescriptor& setLocation(BufferLocation value) { this->location = value; return *this; }
     };
 
     class Buffer {
         BufferDescriptor desc;
 
         ActiveBufferMapping currentMapping;
-        BufferMapState mapState;    
+        BufferMapState mapState;
+
+		Buffer(BufferDescriptor desc) : desc{desc} {}
+
+		ActiveBufferMapping getCurrentMapping() { return this->currentMapping; }
+		BufferMapState getMapState() { return this->mapState; }
 
         virtual void* map(Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
         virtual void unmap() = 0;
@@ -1147,7 +1168,26 @@ namespace Rhi {
     class Device {
         DeviceDescriptor desc;
 
+		Device(DeviceDescriptor desc) : desc{desc} {}
 
+		virtual std::shared_ptr<Buffer> createBuffer(BufferDescriptor descriptor) = 0;
+		
+		Texture createTexture(TextureDescriptor descriptor);
+		Sampler createSampler(SamplerDescriptor descriptor = {});
+
+		BindGroupLayout createBindGroupLayout(BindGroupLayoutDescriptor descriptor);
+		PipelineLayout createPipelineLayout(PipelineLayoutDescriptor descriptor);
+		BindGroup createBindGroup(BindGroupDescriptor descriptor);
+
+		ShaderModule createShaderModule(ShaderModuleDescriptor descriptor);
+		ComputePipeline createComputePipeline(ComputePipelineDescriptor descriptor);
+		RenderPipeline createRenderPipeline(RenderPipelineDescriptor descriptor);
+		ComputePipeline createComputePipelineAsync(ComputePipelineDescriptor descriptor);
+		RenderPipeline createRenderPipelineAsync(RenderPipelineDescriptor descriptor);
+
+		CommandEncoder createCommandEncoder();
+
+		QuerySet createQuerySet(QuerySetDescriptor descriptor);
     };
 
     // ===========================================================================================================================
