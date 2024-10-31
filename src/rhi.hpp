@@ -1072,8 +1072,19 @@ namespace RHI {
     // Queue
     // ===========================================================================================================================
 
-    struct QueueDescriptor {
+    enum class QueueType : uint8_t
+    {
+        Graphic,
+        Compute,
+        Transfer
+    };
 
+    struct QueueDescriptor {
+        QueueType type;
+        uint32_t index;
+
+        constexpr QueueDescriptor& setType(QueueType type) { this->type = type; return *this; }
+        constexpr QueueDescriptor& setIndex(uint32_t index) { this->index = index; return *this; }
     };
 
     class Queue {
@@ -1163,12 +1174,14 @@ namespace RHI {
         SupportedFeatures requiredFeatures;
         SupportedLimits requiredLimits;
         DeviceInfo info;
+        bool enableDebug;
     };
 
     class Device {
+    protected:
         DeviceDescriptor desc;
 
-		Device(DeviceDescriptor desc) : desc{desc} {}
+		Device(const DeviceDescriptor& desc) : desc{desc} {}
 
 		virtual std::shared_ptr<Buffer> createBuffer(BufferDescriptor descriptor) = 0;
 		
