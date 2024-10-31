@@ -310,11 +310,6 @@ namespace RHI {
         createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
         VkPhysicalDeviceFeatures deviceFeatures{};
-        deviceFeatures.samplerAnisotropy = VK_TRUE;
-        deviceFeatures.sampleRateShading = VK_TRUE;
-        deviceFeatures.fillModeNonSolid = VK_TRUE;
-        deviceFeatures.tessellationShader = VK_TRUE;
-        deviceFeatures.multiDrawIndirect = VK_TRUE;
 
         createInfo.pEnabledFeatures = &deviceFeatures;
 
