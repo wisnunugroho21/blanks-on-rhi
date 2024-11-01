@@ -7,6 +7,35 @@
 
 namespace RHI {
     // ===========================================================================================================================
+    // Class Definition
+    // ===========================================================================================================================
+
+    class Buffer;
+    class Texture;
+    class TextureView;
+    class Sampler;
+    class BindGroupLayout;
+    class BindGroup;
+    class PipelineLayout;
+    class ShaderModule;
+    class PipelineBase;
+    class ProgrammableStage;
+    class Queue;
+    class CommandBuffer;
+    class CommandsMixin;
+    class RenderPassEncoder;
+    class ComputePassEncoder;
+    class RenderBundle;
+    class Queue;
+    class Device;
+    class Adapter;
+
+    struct RenderPassColorAttachment;
+    struct RenderPassDepthStencilAttachment;
+    struct RenderPassDescriptor;
+    struct ComputePassDescriptor;
+
+    // ===========================================================================================================================
     // Basic Type
     // ===========================================================================================================================
     typedef const char* String;
@@ -53,8 +82,8 @@ namespace RHI {
         Uint32 y;
         Uint32 z;
 
-		Origin3D() : x{0.0f}, y{0.0f}, z{0.0f} {}
-		Origin3D(float _x, float _y, float _z) : x{_x}, y{_y}, z{_z} {}
+		Origin3D() : x{0}, y{0}, z{0} {}
+		Origin3D(Uint32 _x, Uint32 _y, Uint32 _z) : x{_x}, y{_y}, z{_z} {}
 
         bool operator == (const Origin3D& other) const { 
             return this->x == other.x &&
@@ -338,7 +367,7 @@ namespace RHI {
     class TextureView {
         TextureViewDescriptor desc;
         Texture* texture;
-    }; 
+    };
 
     // ===========================================================================================================================
     // Sampler
@@ -350,12 +379,12 @@ namespace RHI {
         eMirrorRepeat
     };
 
-    enum FilterMode : Uint8 {
+    enum class FilterMode : Uint8 {
         eNearest,
         eLinear
     };
 
-    enum MipmapFilterMode : Uint8 {
+    enum class MipmapFilterMode : Uint8 {
         eNearest,
         eLinear
     };
@@ -569,12 +598,12 @@ namespace RHI {
         eInternal
     };
 
-    enum VertexStepMode : Uint8 {
+    enum class VertexStepMode : Uint8 {
         eVertex,
         eInstance
     };
 
-    enum VertexFormat : Uint8 {
+    enum class VertexFormat : Uint8 {
         eUint8x2,
         eUint8x4,
         eSint8x2,
@@ -608,7 +637,7 @@ namespace RHI {
         eUnorm1010102
     };
 
-    enum PrimitiveTopology : Uint8 {
+    enum class PrimitiveTopology : Uint8 {
         ePointList,
         eLineList,
         eLineStrip,
@@ -616,23 +645,23 @@ namespace RHI {
         eTriangleStrip
     };
 
-    enum IndexFormat : Uint8 {
+    enum class IndexFormat : Uint8 {
         eUint16,
         eUint32
     };
 
-    enum FrontFace : Uint8 {
+    enum class FrontFace : Uint8 {
         eCCW,
         eCW
     };
 
-    enum CullMode : Uint8 {
+    enum class CullMode : Uint8 {
         eNone,
         eFront,
         eBack
     };
 
-    enum PolygonMode : Uint8 {
+    enum class PolygonMode : Uint8 {
         eFill,
         eLine,
         ePoint
@@ -647,7 +676,7 @@ namespace RHI {
         eDecrementClamp
     };
 
-    enum BlendOperation : Uint8 {
+    enum class BlendOperation : Uint8 {
         eAdd,
         eSubtract,
         eReverseSubtract,
@@ -655,7 +684,7 @@ namespace RHI {
         eMax
     };
 
-    enum BlendFactor : Uint8 {
+    enum class BlendFactor : Uint8 {
         eZero,
         eOne,
         eSrc,
@@ -675,7 +704,7 @@ namespace RHI {
         eOneMinusSrc1Alpha,
     };
 
-    enum ColorWrite : FlagsConstant {
+    enum class ColorWrite : FlagsConstant {
         eRED   = 0x1,
         eGREEN = 0x2,
         eBLUE  = 0x4,
@@ -932,8 +961,9 @@ namespace RHI {
 
         virtual void clearBuffer(
             Buffer buffer,
-            Uint64 offset = 0,
-            Uint64 size) = 0;
+            Uint64 size = ULLONG_MAX,
+            Uint64 offset = 0
+        ) = 0;
 
         virtual void resolveQuerySet(
             QuerySet querySet,
@@ -1027,8 +1057,8 @@ namespace RHI {
     class RenderCommandsMixin {
         virtual void setPipeline(RenderPipeline pipeline) = 0;
 
-        virtual void setIndexBuffer(Buffer buffer, IndexFormat indexFormat, Uint64 offset = 0, Uint64 size) = 0;
-        virtual void setVertexBuffer(Uint32 slot, Buffer buffer, Uint64 offset = 0, Uint64 size) = 0;
+        virtual void setIndexBuffer(Buffer buffer, IndexFormat indexFormat, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
+        virtual void setVertexBuffer(Uint32 slot, Buffer buffer, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
 
         virtual void draw(Uint32 vertexCount, Uint32 instanceCount = 1, 
             Uint32 firstVertex = 0, Uint32 firstInstance = 0) = 0;
@@ -1088,23 +1118,13 @@ namespace RHI {
     };
 
     class Queue {
-        QueueDescriptor desc;
+    public:
+        Queue(const QueueDescriptor& desc) : desc{desc} {}
+
         virtual void submit(std::vector<CommandEncoder*> commandBuffers) = 0;
 
-        virtual void writeBuffer(
-            Buffer* buffer,
-            Uint64 bufferOffset,
-            void* data,
-            Uint64 dataOffset = 0,
-            Uint64 size
-        ) = 0;
-
-        virtual void writeTexture(
-            ImageCopyTexture destination,
-            void* data,
-            ImageDataLayout dataLayout,
-            Extent3D size
-        ) = 0;
+    protected:
+        QueueDescriptor desc;
     }; 
 
     // ===========================================================================================================================
@@ -1178,9 +1198,7 @@ namespace RHI {
     };
 
     class Device {
-    protected:
-        DeviceDescriptor desc;
-
+    public:
 		Device(const DeviceDescriptor& desc) : desc{desc} {}
 
 		virtual std::shared_ptr<Buffer> createBuffer(BufferDescriptor descriptor) = 0;
@@ -1201,6 +1219,9 @@ namespace RHI {
 		CommandEncoder createCommandEncoder();
 
 		QuerySet createQuerySet(QuerySetDescriptor descriptor);
+
+    protected:
+        DeviceDescriptor desc;
     };
 
     // ===========================================================================================================================

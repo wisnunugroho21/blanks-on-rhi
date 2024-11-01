@@ -135,8 +135,8 @@ class GPUBuffer {
     GPUBufferMapState mapState;
     GPUBufferInternalState internalState;    
 
-    virtual void map(GPUMapModeFlags mode, GPUSize64 offset = 0, GPUSize64 size) = 0;
-    virtual void* getMappedRange(GPUSize64 offset = 0, GPUSize64 size) = 0;
+    virtual void map(GPUMapModeFlags mode, GPUSize64 offset = 0, GPUSize64 size = 0) = 0;
+    virtual void* getMappedRange(GPUSize64 offset = 0, GPUSize64 size = 0) = 0;
     virtual void unmap() = 0;
 
     virtual void destroy() = 0;
@@ -146,7 +146,7 @@ class GPUBuffer {
 // Texture
 // ===========================================================================================================================
 
-enum GPUTextureFormat : uint8_t {
+enum class GPUTextureFormat : uint8_t {
     // 8-bit formats
     R8_UNORM,
     R8_SNORM,
@@ -347,17 +347,17 @@ enum class GPUAddressMode : uint8_t {
     MirrorRepeat
 };
 
-enum GPUFilterMode : uint8_t {
+enum class GPUFilterMode : uint8_t {
     Nearest,
     Linear
 };
 
-enum GPUMipmapFilterMode : uint8_t {
+enum class GPUMipmapFilterMode : uint8_t {
     Nearest,
     Linear
 };
 
-enum GPUCompareFunction : uint8_t {
+enum class GPUCompareFunction : uint8_t {
     Never,
     Less,
     Equal,
@@ -558,17 +558,17 @@ class GPUShaderModule {
 // Pipeline
 // ===========================================================================================================================
 
-enum class  GPUPipelineErrorReason : uint8_t {
+enum class GPUPipelineErrorReason : uint8_t {
     Validation,
     Internal
 };
 
-enum GPUVertexStepMode : uint8_t {
+enum class GPUVertexStepMode : uint8_t {
     Vertex,
     Instance
 };
 
-enum GPUVertexFormat : uint8_t {
+enum class GPUVertexFormat : uint8_t {
     Uint8x2,
     Uint8x4,
     Sint8x2,
@@ -602,7 +602,7 @@ enum GPUVertexFormat : uint8_t {
     Unorm1010102
 };
 
-enum GPUPrimitiveTopology : uint8_t {
+enum class GPUPrimitiveTopology : uint8_t {
     PointList,
     LineList,
     LineStrip,
@@ -610,23 +610,23 @@ enum GPUPrimitiveTopology : uint8_t {
     TriangleStrip
 };
 
-enum GPUIndexFormat : uint8_t {
+enum class GPUIndexFormat : uint8_t {
     Uint16,
     Uint32
 };
 
-enum GPUFrontFace : uint8_t {
+enum class GPUFrontFace : uint8_t {
     CCW,
     CW
 };
 
-enum GPUCullMode : uint8_t {
+enum class GPUCullMode : uint8_t {
     None,
     Front,
     Back
 };
 
-enum GPUStencilOperation : uint8_t {
+enum class GPUStencilOperation : uint8_t {
     Keep,
     Zero,
     Replace,
@@ -635,7 +635,7 @@ enum GPUStencilOperation : uint8_t {
     DecrementClamp
 };
 
-enum GPUBlendOperation : uint8_t {
+enum class GPUBlendOperation : uint8_t {
     Add,
     Subtract,
     ReverseSubtract,
@@ -643,7 +643,7 @@ enum GPUBlendOperation : uint8_t {
     Max
 };
 
-enum GPUBlendFactor : uint8_t {
+enum class GPUBlendFactor : uint8_t {
     Zero,
     One,
     Src,
@@ -663,7 +663,7 @@ enum GPUBlendFactor : uint8_t {
     OneMinusSrc1Alpha,
 };
 
-enum GPUColorWrite : GPUFlagsConstant {
+enum class GPUColorWrite : GPUFlagsConstant {
     RED   = 0x1,
     GREEN = 0x2,
     BLUE  = 0x4,
@@ -912,7 +912,7 @@ enum class GPUCommandState : uint8_t {
     Ended
 };
 
-struct  GPUCommandEncoderDescriptor : GPUObjectDescriptorBase {
+struct GPUCommandEncoderDescriptor : GPUObjectDescriptorBase {
     
 };
 
@@ -950,8 +950,9 @@ class GPUCommandEncoder : GPUCommandsMixin, GPUDebugCommandsMixin {
 
     virtual void clearBuffer(
         GPUBuffer buffer,
-        GPUSize64 offset = 0,
-        GPUSize64 size) = 0;
+        GPUSize64 size,
+        GPUSize64 offset = 0
+    ) = 0;
 
     virtual void resolveQuerySet(
         GPUQuerySet querySet,
@@ -1040,8 +1041,8 @@ struct GPURenderPassTimestampWrites {
 class GPURenderCommandsMixin {
     virtual void setPipeline(GPURenderPipeline pipeline) = 0;
 
-    virtual void setIndexBuffer(GPUBuffer buffer, GPUIndexFormat indexFormat, GPUSize64 offset = 0, GPUSize64 size) = 0;
-    virtual void setVertexBuffer(GPUIndex32 slot, GPUBuffer buffer, GPUSize64 offset = 0, GPUSize64 size) = 0;
+    virtual void setIndexBuffer(GPUBuffer buffer, GPUIndexFormat indexFormat, GPUSize64 size, GPUSize64 offset = 0) = 0;
+    virtual void setVertexBuffer(GPUIndex32 slot, GPUBuffer buffer, GPUSize64 size, GPUSize64 offset = 0) = 0;
 
     virtual void draw(GPUSize32 vertexCount, GPUSize32 instanceCount = 1, 
         GPUSize32 firstVertex = 0, GPUSize32 firstInstance = 0) = 0;
@@ -1124,8 +1125,8 @@ class GPUQueue {
         GPUBuffer* buffer,
         GPUSize64 bufferOffset,
         void* data,
-        GPUSize64 dataOffset = 0,
-        GPUSize64 size
+        GPUSize64 size,
+        GPUSize64 dataOffset = 0
     ) = 0;
 
     virtual void writeTexture(

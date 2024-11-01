@@ -1,11 +1,28 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+
 #include <vk_mem_alloc.h>
 
 #include "../rhi.hpp"
 
 namespace RHI {
+    class VulkanQueue : public Queue {
+    public:
+        VulkanQueue(
+            const QueueDescriptor& desc,
+            const VkQueue& q
+        )
+        : Queue(desc),
+          queue{q}
+        {}
+
+    void submit(std::vector<CommandEncoder*> commandBuffers) override;
+
+    private:
+        VkQueue queue;
+    };
+
     class VulkanDevice : public Device {
     public:
         VulkanDevice(

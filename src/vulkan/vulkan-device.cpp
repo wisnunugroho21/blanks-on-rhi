@@ -2,6 +2,9 @@
 #include <iostream>
 #include <GLFW/glfw3.h>
 
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
+
 namespace RHI {
     struct QueueFamilyIndices {
         uint32_t graphicsFamily;
@@ -152,9 +155,6 @@ namespace RHI {
     }
 
     void VulkanFactory::createInstance(const DeviceDescriptor& desc, VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger) {
-        VkInstance instance;
-        VkDebugUtilsMessengerEXT debugMessenger;
-
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "";
@@ -316,7 +316,7 @@ namespace RHI {
         std::vector<const char *> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 #ifdef __APPLE__
-        this->deviceExtensions.emplace_back("VK_KHR_portability_subset");
+        deviceExtensions.emplace_back("VK_KHR_portability_subset");
 #endif
 
         createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
@@ -336,7 +336,8 @@ namespace RHI {
                 .setType(QueueType::Graphic)
                 .setIndex(i);
 
-            queues->push_back(std::make_shared<Queue>(vulkanQueue, desc));
+            std::shared_ptr<Queue> a = std::make_shared<VulkanQueue>(desc, vulkanQueue);
+            queues->push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue));
         }
 
         for (uint32_t i = 0; i < familyIndices.computeCount; i++) {
@@ -347,7 +348,7 @@ namespace RHI {
                 .setType(QueueType::Compute)
                 .setIndex(i);
 
-            queues->push_back(std::make_shared<Queue>(vulkanQueue, desc));
+            queues->push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue));
         }
 
         for (uint32_t i = 0; i < familyIndices.transferCount; i++) {
@@ -358,7 +359,7 @@ namespace RHI {
                 .setType(QueueType::Transfer)
                 .setIndex(i);
 
-            queues->push_back(std::make_shared<Queue>(vulkanQueue, desc));
+            queues->push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue));
         }
     }
 

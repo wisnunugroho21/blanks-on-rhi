@@ -1,9 +1,5 @@
-#include "../rhi.hpp"
-
-#include <vulkan/vulkan.h>
+#include "vulkan-backend.hpp"
 
 namespace RHI {
-    class VulkanBuffer : Buffer {
-
-    };
+    
 }
