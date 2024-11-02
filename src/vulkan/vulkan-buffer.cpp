@@ -82,36 +82,63 @@ namespace RHI {
         if (vmaCreateBuffer(this->memoryAllocator, &bufferInfo, &allocInfo, &buffer,
                             &memoryAllocation, nullptr) != VK_SUCCESS) 
         {
-            throw std::runtime_error("failed to create buffer!");
+            throw std::runtime_error("Failed to create buffer!");
         }
 
         return std::make_shared<VulkanBuffer>(desc, buffer, memoryAllocation);
     }
 
-    void* VulkanBuffer::map(Uint64 size = ULLONG_MAX, Uint64 offset = 0) {
-        ActiveBufferMapping map {
-            .size = size,
-            .offset = offset
-        };
+    void VulkanBuffer::insertData(Uint64 size = ULLONG_MAX, Uint64 offset = 0, void* pointerData) {
+        if (vmaCopyMemoryToAllocation(this->device->getMemoryAllocator(), pointerData, this->memoryAllocation, offset, size) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to insert data!");
+        }
+    }
 
-        if (vmaMapMemory(this->device->getMemoryAllocator(), this->memoryAllocation, &map.data) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create buffer!");
+    void VulkanBuffer::takeData(Uint64 size = ULLONG_MAX, Uint64 offset = 0, void* pointerData) {
+        if (vmaCopyAllocationToMemory(this->device->getMemoryAllocator(), this->memoryAllocation, offset, pointerData, size) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to take data!");
+        }
+    }
+
+    void* VulkanBuffer::map() {
+        if (this->mapState == BufferMapState::eMapped) {
+            throw std::runtime_error("Buffer has already mapped! Just get the mapped pointer by using getMapped() function!");
+        }
+
+        if (vmaMapMemory(this->device->getMemoryAllocator(), this->memoryAllocation, &this->mapped) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to map buffer!");
         }
 
         this->mapState = BufferMapState::eMapped;
-
-        return map.data;
+        return this->mapped;
     }
 
     void VulkanBuffer::unmap() {
+        if (this->mapState == BufferMapState::eUnmapped) {
+            throw std::runtime_error("Buffer is not mapped yet! You must map it first by using map() function!");
+        }
 
+        vmaUnmapMemory(this->device->getMemoryAllocator(), this->memoryAllocation);
+        this->mapState = BufferMapState::eUnmapped;
     }
 
     void VulkanBuffer::flush(Uint64 size = ULLONG_MAX, Uint64 offset = 0) {
-
+        if (vmaFlushAllocation(this->device->getMemoryAllocator(), this->memoryAllocation, offset, size) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to flush buffer!");
+        }
     }
 
     void VulkanBuffer::invalidate(Uint64 size = ULLONG_MAX, Uint64 offset = 0) {
+        if (vmaInvalidateAllocation(this->device->getMemoryAllocator(), this->memoryAllocation, offset, size) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to invalidate buffer!");
+        }
+    }
 
+    VulkanBuffer::~VulkanBuffer() {
+        if (this->mapState == BufferMapState::eMapped) {
+            this->unmap();
+        }
+        
+        vmaDestroyBuffer(this->device->getMemoryAllocator(), this->buffer, this->memoryAllocation);
     }
 }

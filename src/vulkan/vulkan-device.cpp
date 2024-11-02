@@ -217,11 +217,11 @@ namespace RHI {
             createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *) &debugInfo;
             
             if (vkCreateInstance(&createInfo, nullptr, instance) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create instance!");
+                throw std::runtime_error("Failed to create instance!");
             }
 
             if (CreateDebugUtilsMessengerEXT(*instance, &debugInfo, nullptr, debugMessenger) != VK_SUCCESS) {
-                throw std::runtime_error("failed to set up debug messenger!");
+                throw std::runtime_error("Failed to set up debug messenger!");
             }            
         } else {
             createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
@@ -231,7 +231,7 @@ namespace RHI {
             createInfo.pNext = nullptr;
 
             if (vkCreateInstance(&createInfo, nullptr, instance) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create instance!");
+                throw std::runtime_error("Failed to create instance!");
             }
         }
     }
@@ -241,7 +241,7 @@ namespace RHI {
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
         if (deviceCount == 0) {
-            throw std::runtime_error("failed to find GPUs with Vulkan support!");
+            throw std::runtime_error("Failed to find GPUs with Vulkan support!");
         }
 
         std::cout << "Device count: " << deviceCount << std::endl;
@@ -339,7 +339,7 @@ namespace RHI {
         createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
         if (vkCreateDevice(physicalDevice, &createInfo, nullptr, device) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create logical device!");
+            throw std::runtime_error("Failed to create logical device!");
         }
 
         queues->clear();

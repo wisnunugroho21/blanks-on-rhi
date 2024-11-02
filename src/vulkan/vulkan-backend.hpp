@@ -59,7 +59,12 @@ namespace RHI {
             this->mapState = BufferMapState::eUnmapped;
         }
 
-        void* map(Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
+        ~VulkanBuffer();
+
+        void insertData(Uint64 size = ULLONG_MAX, Uint64 offset = 0, void* pointerData) override;
+        void takeData(Uint64 size = ULLONG_MAX, Uint64 offset = 0, void* pointerData) override;
+
+        void* map() override;
         void unmap() override;
 
         void flush(Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;

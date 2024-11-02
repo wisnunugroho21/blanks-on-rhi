@@ -149,10 +149,13 @@ namespace RHI {
     public:
         Buffer(BufferDescriptor desc) : desc{desc} {}
 
-        ActiveBufferMapping getCurrentMapping() { return this->currentMapping; }
+        void* getMapped() { return this->mapped; }
 		BufferMapState getMapState() { return this->mapState; }
 
-        virtual void* map(Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
+        virtual void insertData(Uint64 size = ULLONG_MAX, Uint64 offset = 0, void* pointerData) = 0;
+        virtual void takeData(Uint64 size = ULLONG_MAX, Uint64 offset = 0, void* pointerData) = 0;
+
+        virtual void* map() = 0;
         virtual void unmap() = 0;
 
         virtual void flush(Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
@@ -161,7 +164,7 @@ namespace RHI {
     protected:
         BufferDescriptor desc;
 
-        ActiveBufferMapping currentMapping;
+        void* mapped;
         BufferMapState mapState;
     };
 
