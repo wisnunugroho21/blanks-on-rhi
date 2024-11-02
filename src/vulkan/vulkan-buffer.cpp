@@ -73,7 +73,6 @@ namespace RHI {
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = descriptor.size;
         bufferInfo.usage = vulkanBufferFlags;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = vulkanMemoryUsage;
