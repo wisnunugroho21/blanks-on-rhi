@@ -146,14 +146,10 @@ namespace RHI {
     };
 
     class Buffer {
-        BufferDescriptor desc;
+    public:
+        Buffer(BufferDescriptor desc) : desc{desc} {}
 
-        ActiveBufferMapping currentMapping;
-        BufferMapState mapState;
-
-		Buffer(BufferDescriptor desc) : desc{desc} {}
-
-		ActiveBufferMapping getCurrentMapping() { return this->currentMapping; }
+        ActiveBufferMapping getCurrentMapping() { return this->currentMapping; }
 		BufferMapState getMapState() { return this->mapState; }
 
         virtual void* map(Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
@@ -161,6 +157,12 @@ namespace RHI {
 
         virtual void flush(Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
         virtual void invalidate(Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
+
+    protected:
+        BufferDescriptor desc;
+
+        ActiveBufferMapping currentMapping;
+        BufferMapState mapState;
     };
 
     // ===========================================================================================================================
@@ -861,9 +863,9 @@ namespace RHI {
     // ===========================================================================================================================
 
     struct ImageDataLayout {
-        uint64_t offset = 0;
-        uint32_t bytesPerRow;
-        uint32_t rowsPerImage;
+        Uint64 offset = 0;
+        Uint32 bytesPerRow;
+        Uint32 rowsPerImage;
     };
 
     struct ImageCopyTexture {
@@ -938,9 +940,9 @@ namespace RHI {
         virtual std::shared_ptr<ComputePassEncoder> beginComputePass(ComputePassDescriptor descriptor) = 0;
 
         virtual void copyBufferToBuffer(
-            Buffer source,
+            Buffer* source,
             Uint64 sourceOffset,
-            Buffer destination,
+            Buffer* destination,
             Uint64 destinationOffset,
             Uint64 size) = 0;
 
@@ -960,7 +962,7 @@ namespace RHI {
             Extent3D copySize) = 0;
 
         virtual void clearBuffer(
-            Buffer buffer,
+            Buffer* buffer,
             Uint64 size = ULLONG_MAX,
             Uint64 offset = 0
         ) = 0;
@@ -969,7 +971,7 @@ namespace RHI {
             QuerySet querySet,
             Uint32 firstQuery,
             Uint32 queryCount,
-            Buffer destination,
+            Buffer* destination,
             Uint64 destinationOffset) = 0;
 
         virtual void finish() = 0;
@@ -1006,7 +1008,7 @@ namespace RHI {
 
         virtual void setPipeline(ComputePipeline* pipeline) = 0;
         virtual void dispatchWorkgroups(Uint32 workgroupCountX, Uint32 workgroupCountY = 1, Uint32 workgroupCountZ = 1) = 0;
-        virtual void dispatchWorkgroupsIndirect(Buffer indirectBuffer, Uint64 indirectOffset) = 0;
+        virtual void dispatchWorkgroupsIndirect(Buffer* indirectBuffer, Uint64 indirectOffset) = 0;
 
         virtual void end() = 0;
     };
@@ -1057,8 +1059,8 @@ namespace RHI {
     class RenderCommandsMixin {
         virtual void setPipeline(RenderPipeline pipeline) = 0;
 
-        virtual void setIndexBuffer(Buffer buffer, IndexFormat indexFormat, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
-        virtual void setVertexBuffer(Uint32 slot, Buffer buffer, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
+        virtual void setIndexBuffer(Buffer* buffer, IndexFormat indexFormat, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
+        virtual void setVertexBuffer(Uint32 slot, Buffer* buffer, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
 
         virtual void draw(Uint32 vertexCount, Uint32 instanceCount = 1, 
             Uint32 firstVertex = 0, Uint32 firstInstance = 0) = 0;
@@ -1066,8 +1068,8 @@ namespace RHI {
             Uint32 firstIndex = 0, Int32 baseVertex = 0,
             Uint32 firstInstance = 0) = 0;
 
-        virtual void drawIndirect(Buffer indirectBuffer, Uint64 indirectOffset) = 0;
-        virtual void drawIndexedIndirect(Buffer indirectBuffer, Uint64 indirectOffset) = 0;
+        virtual void drawIndirect(Buffer* indirectBuffer, Uint64 indirectOffset) = 0;
+        virtual void drawIndexedIndirect(Buffer* indirectBuffer, Uint64 indirectOffset) = 0;
     };
 
     struct RenderPassDescriptor {
@@ -1119,7 +1121,7 @@ namespace RHI {
 
     class Queue {
     public:
-        Queue(const QueueDescriptor& desc) : desc{desc} {}
+        Queue(QueueDescriptor desc) : desc{desc} {}
 
         virtual void submit(std::vector<CommandEncoder*> commandBuffers) = 0;
 
@@ -1199,7 +1201,7 @@ namespace RHI {
 
     class Device {
     public:
-		Device(const DeviceDescriptor& desc) : desc{desc} {}
+		Device(DeviceDescriptor desc) : desc{desc} {}
 
 		virtual std::shared_ptr<Buffer> createBuffer(BufferDescriptor descriptor) = 0;
 		

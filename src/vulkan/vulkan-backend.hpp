@@ -7,11 +7,28 @@
 #include "../rhi.hpp"
 
 namespace RHI {
+    class VulkanBuffer : public Buffer {
+    public:
+        VulkanBuffer(
+            BufferDescriptor desc,
+            VkBuffer b,
+            VmaAllocation ma
+        )
+        : Buffer(desc), 
+          buffer{b},
+          memoryAllocation{ma}
+        {}
+
+    private:
+        VkBuffer buffer;
+        VmaAllocation memoryAllocation;
+    };
+
     class VulkanQueue : public Queue {
     public:
         VulkanQueue(
-            const QueueDescriptor& desc,
-            const VkQueue& q
+            QueueDescriptor desc,
+            VkQueue q
         )
         : Queue(desc),
           queue{q}
@@ -26,20 +43,25 @@ namespace RHI {
     class VulkanDevice : public Device {
     public:
         VulkanDevice(
-            const DeviceDescriptor& desc,
-            const VkPhysicalDevice& pd, 
-            const VkDevice& d,
-            const VkPhysicalDeviceProperties& dp,
-            const VmaAllocator& vma            
+            DeviceDescriptor desc,
+            VkPhysicalDevice pd, 
+            VkDevice d,
+            VkDebugUtilsMessengerEXT debugMessenger,
+            VkPhysicalDeviceProperties dp,
+            VmaAllocator vma,
+            std::vector<std::shared_ptr<Queue>> q            
         )
         : Device(desc),
           physicalDevice{pd}, 
           device{d},
           deviceProperties{dp},
-          memoryAllocator{vma}
+          memoryAllocator{vma},
+          queues{q}
         {
 
-        }        
+        }
+
+        std::shared_ptr<Buffer> createBuffer(BufferDescriptor descriptor);
         
     private:
         VkInstance instance;
@@ -49,14 +71,16 @@ namespace RHI {
         VkDebugUtilsMessengerEXT debugMessenger;
         VkPhysicalDeviceProperties deviceProperties;
         VmaAllocator memoryAllocator;
+
+        std::vector<std::shared_ptr<Queue>> queues;
     };
 
     class VulkanFactory {
-        static std::shared_ptr<Device> createDevice();
+        static std::shared_ptr<Device> createDevice(DeviceDescriptor desc);
 
-        void createInstance(const DeviceDescriptor& desc, VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger);
-        void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice* physicalDevice, VkPhysicalDeviceProperties* deviceProperties);
-        void createLogicalDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice* device, std::vector<std::shared_ptr<Queue>>* queues);
-        void createMemoryAllocator(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator* memoryAllocator);
+        static void createInstance(DeviceDescriptor desc, VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger);
+        static void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice* physicalDevice, VkPhysicalDeviceProperties* deviceProperties);
+        static void createLogicalDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice* device, std::vector<std::shared_ptr<Queue>>* queues);
+        static void createMemoryAllocator(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator* memoryAllocator);
     };
 }

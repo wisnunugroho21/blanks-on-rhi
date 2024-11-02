@@ -150,11 +150,27 @@ namespace RHI {
         }
     }
 
-    std::shared_ptr<Device> VulkanFactory::createDevice() {
+    std::shared_ptr<Device> VulkanFactory::createDevice(DeviceDescriptor desc) {
+        VkInstance instance;
+        VkPhysicalDevice physicalDevice;
+        VkDevice device;
 
+        VkDebugUtilsMessengerEXT debugMessenger;
+        VkPhysicalDeviceProperties deviceProperties;
+        VmaAllocator memoryAllocator;
+
+        std::vector<std::shared_ptr<Queue>> queues;
+
+        VulkanFactory::createInstance(desc, &instance, &debugMessenger);
+        VulkanFactory::pickPhysicalDevice(instance, &physicalDevice, &deviceProperties);
+        VulkanFactory::createLogicalDevice(instance, physicalDevice, &device, &queues);
+        VulkanFactory::createMemoryAllocator(instance, physicalDevice, device, &memoryAllocator);
+
+        return std::make_shared<VulkanDevice>(instance, physicalDevice, device, 
+            debugMessenger, deviceProperties, memoryAllocator, queues);
     }
 
-    void VulkanFactory::createInstance(const DeviceDescriptor& desc, VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger) {
+    void VulkanFactory::createInstance(DeviceDescriptor desc, VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger) {
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "";
