@@ -11,17 +11,29 @@ namespace RHI {
 
         if (descriptor.usage & std::to_underlying(BufferUsage::eCopySrc)) {
             vulkanBufferFlags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        } else if (descriptor.usage & std::to_underlying(BufferUsage::eCopyDst)) {
+        } 
+        
+        if (descriptor.usage & std::to_underlying(BufferUsage::eCopyDst)) {
             vulkanBufferFlags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        } else if (descriptor.usage & std::to_underlying(BufferUsage::eIndex)) {
+        } 
+        
+        if (descriptor.usage & std::to_underlying(BufferUsage::eIndex)) {
             vulkanBufferFlags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-        } else if (descriptor.usage & std::to_underlying(BufferUsage::eVertex)) {
+        } 
+        
+        if (descriptor.usage & std::to_underlying(BufferUsage::eVertex)) {
             vulkanBufferFlags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        } else if (descriptor.usage & std::to_underlying(BufferUsage::eUniform)) {
+        } 
+        
+        if (descriptor.usage & std::to_underlying(BufferUsage::eUniform)) {
             vulkanBufferFlags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        } else if (descriptor.usage & std::to_underlying(BufferUsage::eStorage)) {
+        } 
+        
+        if (descriptor.usage & std::to_underlying(BufferUsage::eStorage)) {
             vulkanBufferFlags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        } else if (descriptor.usage & std::to_underlying(BufferUsage::eIndirect)) {
+        } 
+        
+        if (descriptor.usage & std::to_underlying(BufferUsage::eIndirect)) {
             vulkanBufferFlags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
         }
 
@@ -45,11 +57,15 @@ namespace RHI {
             && descriptor.location == BufferLocation::eHost)
         {
             vulkanAllocationFlag = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        } else if (descriptor.usage & std::to_underlying(BufferUsage::eCopyDst)
-            && descriptor.location == BufferLocation::eHost)
+        } 
+        
+        else if (descriptor.usage & std::to_underlying(BufferUsage::eCopyDst)
+                && descriptor.location == BufferLocation::eHost)
         {
             vulkanAllocationFlag = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        } else if (descriptor.location == BufferLocation::eDeviceLocal)  {
+        } 
+        
+        else if (descriptor.location == BufferLocation::eDeviceLocal)  {
             vulkanAllocationFlag = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
         }
 
