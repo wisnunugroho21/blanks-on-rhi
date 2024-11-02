@@ -7,39 +7,6 @@
 #include "../rhi.hpp"
 
 namespace RHI {
-    class VulkanBuffer : public Buffer {
-    public:
-        VulkanBuffer(
-            BufferDescriptor desc,
-            VkBuffer b,
-            VmaAllocation ma
-        )
-        : Buffer(desc), 
-          buffer{b},
-          memoryAllocation{ma}
-        {}
-
-    private:
-        VkBuffer buffer;
-        VmaAllocation memoryAllocation;
-    };
-
-    class VulkanQueue : public Queue {
-    public:
-        VulkanQueue(
-            QueueDescriptor desc,
-            VkQueue q
-        )
-        : Queue(desc),
-          queue{q}
-        {}
-
-    void submit(std::vector<CommandEncoder*> commandBuffers) override;
-
-    private:
-        VkQueue queue;
-    };
-
     class VulkanDevice : public Device {
     public:
         VulkanDevice(
@@ -61,6 +28,8 @@ namespace RHI {
 
         }
 
+        VmaAllocator getMemoryAllocator() { return this->memoryAllocator; }
+
         std::shared_ptr<Buffer> createBuffer(BufferDescriptor descriptor);
         
     private:
@@ -74,6 +43,50 @@ namespace RHI {
 
         std::vector<std::shared_ptr<Queue>> queues;
     };
+
+    class VulkanBuffer : public Buffer {
+    public:
+        VulkanBuffer(
+            BufferDescriptor desc,
+            VulkanDevice* device,
+            VkBuffer b,
+            VmaAllocation ma
+        )
+        : Buffer(desc), 
+          buffer{b},
+          memoryAllocation{ma}
+        {
+            this->mapState = BufferMapState::eUnmapped;
+        }
+
+        void* map(Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
+        void unmap() override;
+
+        void flush(Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
+        void invalidate(Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
+
+    private:
+        VulkanDevice* device;
+
+        VkBuffer buffer;
+        VmaAllocation memoryAllocation;
+    };
+
+    class VulkanQueue : public Queue {
+    public:
+        VulkanQueue(
+            QueueDescriptor desc,
+            VkQueue q
+        )
+        : Queue(desc),
+          queue{q}
+        {}
+
+    void submit(std::vector<CommandEncoder*> commandBuffers) override;
+
+    private:
+        VkQueue queue;
+    };    
 
     class VulkanFactory {
         static std::shared_ptr<Device> createDevice(DeviceDescriptor desc);

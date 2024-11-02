@@ -87,4 +87,31 @@ namespace RHI {
 
         return std::make_shared<VulkanBuffer>(desc, buffer, memoryAllocation);
     }
+
+    void* VulkanBuffer::map(Uint64 size = ULLONG_MAX, Uint64 offset = 0) {
+        ActiveBufferMapping map {
+            .size = size,
+            .offset = offset
+        };
+
+        if (vmaMapMemory(this->device->getMemoryAllocator(), this->memoryAllocation, &map.data) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create buffer!");
+        }
+
+        this->mapState = BufferMapState::eMapped;
+
+        return map.data;
+    }
+
+    void VulkanBuffer::unmap() {
+
+    }
+
+    void VulkanBuffer::flush(Uint64 size = ULLONG_MAX, Uint64 offset = 0) {
+
+    }
+
+    void VulkanBuffer::invalidate(Uint64 size = ULLONG_MAX, Uint64 offset = 0) {
+
+    }
 }
