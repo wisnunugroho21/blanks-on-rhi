@@ -3,80 +3,83 @@
 #include <utility>
 
 namespace RHI {
-    std::shared_ptr<Buffer> VulkanDevice::createBuffer(BufferDescriptor descriptor) {
-        VkBuffer buffer;
-        VmaAllocation memoryAllocation;
-
+    VkBufferUsageFlags convertBufferUsageIntoVulkan(BufferUsageFlags usage) {
         VkBufferUsageFlags vulkanBufferFlags = 0;
 
-        if (descriptor.usage & std::to_underlying(BufferUsage::eCopySrc)) {
+        if (usage & std::to_underlying(BufferUsage::eCopySrc)) {
             vulkanBufferFlags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         } 
         
-        if (descriptor.usage & std::to_underlying(BufferUsage::eCopyDst)) {
+        if (usage & std::to_underlying(BufferUsage::eCopyDst)) {
             vulkanBufferFlags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         } 
         
-        if (descriptor.usage & std::to_underlying(BufferUsage::eIndex)) {
+        if (usage & std::to_underlying(BufferUsage::eIndex)) {
             vulkanBufferFlags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
         } 
         
-        if (descriptor.usage & std::to_underlying(BufferUsage::eVertex)) {
+        if (usage & std::to_underlying(BufferUsage::eVertex)) {
             vulkanBufferFlags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         } 
         
-        if (descriptor.usage & std::to_underlying(BufferUsage::eUniform)) {
+        if (usage & std::to_underlying(BufferUsage::eUniform)) {
             vulkanBufferFlags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         } 
         
-        if (descriptor.usage & std::to_underlying(BufferUsage::eStorage)) {
+        if (usage & std::to_underlying(BufferUsage::eStorage)) {
             vulkanBufferFlags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         } 
         
-        if (descriptor.usage & std::to_underlying(BufferUsage::eIndirect)) {
+        if (usage & std::to_underlying(BufferUsage::eIndirect)) {
             vulkanBufferFlags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
         }
 
-        VmaMemoryUsage vulkanMemoryUsage;
-        switch (descriptor.location) {
+        return vulkanBufferFlags;
+    }
+
+    VmaMemoryUsage convertBufferLocationIntoVulkan(BufferLocation location) {
+        switch (location) {
             case BufferLocation::eDeviceLocal:
-                vulkanMemoryUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-                break;
+                return VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
             
             case BufferLocation::eHost:
-                vulkanMemoryUsage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
-                break;
+                return VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
             
             default:
-                vulkanMemoryUsage = VMA_MEMORY_USAGE_AUTO;
-                break;
+                return VMA_MEMORY_USAGE_AUTO;
         }
+    }
 
+    VmaAllocationCreateFlags convertToAllocationFlag(BufferUsageFlags usage, BufferLocation location) {
         VmaAllocationCreateFlags vulkanAllocationFlag{};
-        if (descriptor.usage & std::to_underlying(BufferUsage::eCopySrc)
-            && descriptor.location == BufferLocation::eHost)
-        {
+
+        if (usage & std::to_underlying(BufferUsage::eCopySrc) && location == BufferLocation::eHost) {
             vulkanAllocationFlag = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
         } 
         
-        else if (descriptor.usage & std::to_underlying(BufferUsage::eCopyDst)
-                && descriptor.location == BufferLocation::eHost)
-        {
+        else if (usage & std::to_underlying(BufferUsage::eCopyDst) && location == BufferLocation::eHost) {
             vulkanAllocationFlag = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
         } 
         
-        else if (descriptor.location == BufferLocation::eDeviceLocal)  {
+        else if (location == BufferLocation::eDeviceLocal) {
             vulkanAllocationFlag = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
         }
 
+        return vulkanAllocationFlag;
+    }
+
+    std::shared_ptr<Buffer> VulkanDevice::createBuffer(BufferDescriptor desc) {
+        VkBuffer buffer;
+        VmaAllocation memoryAllocation;
+
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = descriptor.size;
-        bufferInfo.usage = vulkanBufferFlags;
+        bufferInfo.size = desc.size;
+        bufferInfo.usage = convertBufferUsageIntoVulkan(desc.usage);
 
         VmaAllocationCreateInfo allocInfo = {};
-        allocInfo.usage = vulkanMemoryUsage;
-        allocInfo.flags = vulkanAllocationFlag;
+        allocInfo.usage = convertBufferLocationIntoVulkan(desc.location);
+        allocInfo.flags = convertToAllocationFlag(desc.usage, desc.location);
 
         if (vmaCreateBuffer(this->memoryAllocator, &bufferInfo, &allocInfo, &buffer,
                             &memoryAllocation, nullptr) != VK_SUCCESS) 
@@ -84,16 +87,16 @@ namespace RHI {
             throw std::runtime_error("Failed to create buffer!");
         }
 
-        return std::make_shared<VulkanBuffer>(desc, buffer, memoryAllocation);
+        return std::make_shared<VulkanBuffer>(desc, this, buffer, memoryAllocation);
     }
 
-    void VulkanBuffer::insertData(Uint64 size = ULLONG_MAX, Uint64 offset = 0, void* pointerData) {
+    void VulkanBuffer::insertData(void* pointerData, Uint64 size, Uint64 offset) {
         if (vmaCopyMemoryToAllocation(this->device->getMemoryAllocator(), pointerData, this->memoryAllocation, offset, size) != VK_SUCCESS) {
             throw std::runtime_error("Failed to insert data!");
         }
     }
 
-    void VulkanBuffer::takeData(Uint64 size = ULLONG_MAX, Uint64 offset = 0, void* pointerData) {
+    void VulkanBuffer::takeData(void* pointerData, Uint64 size, Uint64 offset) {
         if (vmaCopyAllocationToMemory(this->device->getMemoryAllocator(), this->memoryAllocation, offset, pointerData, size) != VK_SUCCESS) {
             throw std::runtime_error("Failed to take data!");
         }
@@ -121,13 +124,13 @@ namespace RHI {
         this->mapState = BufferMapState::eUnmapped;
     }
 
-    void VulkanBuffer::flush(Uint64 size = ULLONG_MAX, Uint64 offset = 0) {
+    void VulkanBuffer::flush(Uint64 size, Uint64 offset) {
         if (vmaFlushAllocation(this->device->getMemoryAllocator(), this->memoryAllocation, offset, size) != VK_SUCCESS) {
             throw std::runtime_error("Failed to flush buffer!");
         }
     }
 
-    void VulkanBuffer::invalidate(Uint64 size = ULLONG_MAX, Uint64 offset = 0) {
+    void VulkanBuffer::invalidate(Uint64 size, Uint64 offset) {
         if (vmaInvalidateAllocation(this->device->getMemoryAllocator(), this->memoryAllocation, offset, size) != VK_SUCCESS) {
             throw std::runtime_error("Failed to invalidate buffer!");
         }

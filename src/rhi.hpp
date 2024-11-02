@@ -128,12 +128,6 @@ namespace RHI {
         eUnmapped,
         eMapped
     };
-
-    struct ActiveBufferMapping {
-        void* data;
-        Uint64 size = ULLONG_MAX;
-        Uint64 offset = 0;
-    };
     
     struct BufferDescriptor {
         Uint64 size;
@@ -152,8 +146,8 @@ namespace RHI {
         void* getMapped() { return this->mapped; }
 		BufferMapState getMapState() { return this->mapState; }
 
-        virtual void insertData(Uint64 size = ULLONG_MAX, Uint64 offset = 0, void* pointerData) = 0;
-        virtual void takeData(Uint64 size = ULLONG_MAX, Uint64 offset = 0, void* pointerData) = 0;
+        virtual void insertData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
+        virtual void takeData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
 
         virtual void* map() = 0;
         virtual void unmap() = 0;
@@ -172,18 +166,6 @@ namespace RHI {
     // Texture
     // ===========================================================================================================================
 
-    enum class TextureState : Uint8 {
-        eUndefined,
-        eGeneral,
-        eColorAttachment,
-        eDepthStencilAttachment,
-        eShaderReadOnly,
-        eDepthStencilReadOnly,
-        eCopySrc,
-        eCopyDst,
-        ePresent
-    };
-
     enum TextureFormat : Uint8 {
         // 8-bit formats
         eR8Unorm,
@@ -201,12 +183,12 @@ namespace RHI {
         eRG8Sint,
 
         // 32-bit formats
-        eR32uint,
-        eR32sint,
-        eR32float,
-        eRG16uint,
-        eRG16sint,
-        eRG16float,
+        eR32Uint,
+        eR32Sint,
+        eR32Float,
+        eRG16Uint,
+        eRG16Sint,
+        eRG16Float,
         eRGBA8Unorm,
         eRGBA8UnormSrgb,
         eRGBA8Snorm,
@@ -219,7 +201,6 @@ namespace RHI {
         eRGB9E5Ufloat,
         eRGB10A2Uint,
         eRGB10A2Unorm,
-        eRG11B10Ufloat,
 
         // 64-bit formats
         eRG32Uint,
@@ -324,27 +305,51 @@ namespace RHI {
     enum class TextureAspect : Uint8 {
         eColor,
         eDepth, 
-        eStencil
+        eStencil,
+        eDepthStencil
     };
 
     enum class TextureUsage : FlagsConstant {
-        eCopySrc          = 0x01,
-        eCopyDst          = 0x02,
-        eTextureBinding   = 0x04,
-        eStorageBinding   = 0x08,
-        eRenderAttachment = 0x10
+        eCopySrc                = 0x01,
+        eCopyDst                = 0x02,
+        eTextureBinding         = 0x04,
+        eStorageBinding         = 0x08,
+        eColorAttachment        = 0x10,
+        eDepthStencilAttachment = 0x20
+    };
+
+    enum class TextureState : Uint8 {
+        eUndefined,
+        eColorAttachment,
+        eDepthStencilAttachment,
+        eColorTextureBinding,
+        eDepthStencilTextureBinding,
+        eStorageBinding,
+        eCopySrc,
+        eCopyDst,
+        ePresent
     };
 
     struct TextureDescriptor {
         Extent3D size;
+        TextureFormat format;
+        TextureUsageFlags usage;
 
         Uint32 sliceLayersNum = 1;
         Uint32 mipLevelCount = 1;
         Uint32 sampleCount = 1;
 
         TextureDimension dimension = TextureDimension::e2D;
-        TextureUsageFlags usage;
-        TextureFormat format;
+        TextureState initialState = TextureState::eUndefined;
+
+        constexpr TextureDescriptor& setSize(Extent3D value) { this->size = value; return *this; }
+        constexpr TextureDescriptor& setFormat(TextureFormat value) { this->format = value; return *this; }
+        constexpr TextureDescriptor& setUsage(TextureUsageFlags value) { this->usage = value; return *this; }
+        constexpr TextureDescriptor& setSliceLayersNum(Uint32 value) { this->sliceLayersNum = value; return *this; }
+        constexpr TextureDescriptor& setMipLevelCount(Uint32 value) { this->mipLevelCount = value; return *this; }
+        constexpr TextureDescriptor& setSampleCount(Uint32 value) { this->sampleCount = value; return *this; }
+        constexpr TextureDescriptor& setDimension(TextureDimension value) { this->dimension = value; return *this; }
+        constexpr TextureDescriptor& setInitialState(TextureState value) { this->initialState = value; return *this; }
     };
 
     struct TextureSubresource {
@@ -355,21 +360,41 @@ namespace RHI {
 
         Uint32 baseArrayLayer = 0;
         Uint32 arrayLayerCount = 1;
+
+        constexpr TextureSubresource& setAspect(TextureAspect value) { this->aspect = value; return *this; }
+        constexpr TextureSubresource& setBaseMipLevel(Uint32 value) { this->baseMipLevel = value; return *this; }
+        constexpr TextureSubresource& setMipLevelCount(Uint32 value) { this->mipLevelCount = value; return *this; }
+        constexpr TextureSubresource& setBaseArrayLayer(Uint32 value) { this->baseArrayLayer = value; return *this; }
+        constexpr TextureSubresource& setArrayLayerCount(Uint32 value) { this->arrayLayerCount = value; return *this; }
     };
 
     struct TextureViewDescriptor {
-        TextureViewDimension dimension = TextureViewDimension::e2D;
         TextureSubresource subresource;
+        TextureFormat format;
+
+        TextureViewDimension dimension = TextureViewDimension::e2D;
+
+        constexpr TextureViewDescriptor& setSubresource(TextureSubresource value) { this->subresource = value; return *this; }
+        constexpr TextureViewDescriptor& setFormat(TextureFormat value) { this->format = value; return *this; }
+        constexpr TextureViewDescriptor& setDimension(TextureViewDimension value) { this->dimension = value; return *this; }
     };
 
     class Texture {
+    public:
+        Texture(TextureDescriptor desc) : desc{desc} {}
+
+    private:
         TextureDescriptor desc;
         TextureState state;
         
-        virtual std::shared_ptr<TextureView> createView(TextureViewDescriptor descriptor) = 0;
+        virtual std::shared_ptr<TextureView> createView(TextureViewDescriptor desc) = 0;
     };
 
     class TextureView {
+    public: 
+        TextureView(TextureViewDescriptor desc) : desc{desc} {}
+        
+    private:
         TextureViewDescriptor desc;
         Texture* texture;
     };
@@ -939,8 +964,8 @@ namespace RHI {
     };
 
     class CommandEncoder : CommandsMixin, BarrierCommandsMixin {
-        virtual std::shared_ptr<RenderPassEncoder> beginRenderPass(RenderPassDescriptor descriptor) = 0;
-        virtual std::shared_ptr<ComputePassEncoder> beginComputePass(ComputePassDescriptor descriptor) = 0;
+        virtual std::shared_ptr<RenderPassEncoder> beginRenderPass(RenderPassDescriptor desc) = 0;
+        virtual std::shared_ptr<ComputePassEncoder> beginComputePass(ComputePassDescriptor desc) = 0;
 
         virtual void copyBufferToBuffer(
             Buffer* source,
@@ -1206,24 +1231,24 @@ namespace RHI {
     public:
 		Device(DeviceDescriptor desc) : desc{desc} {}
 
-		virtual std::shared_ptr<Buffer> createBuffer(BufferDescriptor descriptor) = 0;
-		
-		Texture createTexture(TextureDescriptor descriptor);
-		Sampler createSampler(SamplerDescriptor descriptor = {});
+		virtual std::shared_ptr<Buffer> createBuffer(BufferDescriptor desc) = 0;
+		virtual std::shared_ptr<Texture> createTexture(TextureDescriptor desc) = 0;
 
-		BindGroupLayout createBindGroupLayout(BindGroupLayoutDescriptor descriptor);
-		PipelineLayout createPipelineLayout(PipelineLayoutDescriptor descriptor);
-		BindGroup createBindGroup(BindGroupDescriptor descriptor);
+		Sampler createSampler(SamplerDescriptor desc);
 
-		ShaderModule createShaderModule(ShaderModuleDescriptor descriptor);
-		ComputePipeline createComputePipeline(ComputePipelineDescriptor descriptor);
-		RenderPipeline createRenderPipeline(RenderPipelineDescriptor descriptor);
-		ComputePipeline createComputePipelineAsync(ComputePipelineDescriptor descriptor);
-		RenderPipeline createRenderPipelineAsync(RenderPipelineDescriptor descriptor);
+		BindGroupLayout createBindGroupLayout(BindGroupLayoutDescriptor desc);
+		PipelineLayout createPipelineLayout(PipelineLayoutDescriptor desc);
+		BindGroup createBindGroup(BindGroupDescriptor desc);
+
+		ShaderModule createShaderModule(ShaderModuleDescriptor desc);
+		ComputePipeline createComputePipeline(ComputePipelineDescriptor desc);
+		RenderPipeline createRenderPipeline(RenderPipelineDescriptor desc);
+		ComputePipeline createComputePipelineAsync(ComputePipelineDescriptor desc);
+		RenderPipeline createRenderPipelineAsync(RenderPipelineDescriptor desc);
 
 		CommandEncoder createCommandEncoder();
 
-		QuerySet createQuerySet(QuerySetDescriptor descriptor);
+		QuerySet createQuerySet(QuerySetDescriptor desc);
 
     protected:
         DeviceDescriptor desc;

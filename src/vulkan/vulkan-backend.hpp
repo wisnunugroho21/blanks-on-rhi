@@ -11,26 +11,31 @@ namespace RHI {
     public:
         VulkanDevice(
             DeviceDescriptor desc,
+            VkInstance i,
             VkPhysicalDevice pd, 
             VkDevice d,
-            VkDebugUtilsMessengerEXT debugMessenger,
+            VkDebugUtilsMessengerEXT dm,
             VkPhysicalDeviceProperties dp,
             VmaAllocator vma,
             std::vector<std::shared_ptr<Queue>> q            
         )
         : Device(desc),
+          instance{i},
           physicalDevice{pd}, 
           device{d},
+          debugMessenger{dm},
           deviceProperties{dp},
           memoryAllocator{vma},
           queues{q}
         {
 
         }
-
+        
+        VkDevice getNative() { return this->device; }
         VmaAllocator getMemoryAllocator() { return this->memoryAllocator; }
 
-        std::shared_ptr<Buffer> createBuffer(BufferDescriptor descriptor);
+        std::shared_ptr<Buffer> createBuffer(BufferDescriptor descriptor) override;
+        std::shared_ptr<Texture> createTexture(TextureDescriptor descriptor) override;
         
     private:
         VkInstance instance;
@@ -48,11 +53,12 @@ namespace RHI {
     public:
         VulkanBuffer(
             BufferDescriptor desc,
-            VulkanDevice* device,
+            VulkanDevice* d,
             VkBuffer b,
             VmaAllocation ma
         )
-        : Buffer(desc), 
+        : Buffer(desc),
+          device{d}, 
           buffer{b},
           memoryAllocation{ma}
         {
@@ -61,8 +67,8 @@ namespace RHI {
 
         ~VulkanBuffer();
 
-        void insertData(Uint64 size = ULLONG_MAX, Uint64 offset = 0, void* pointerData) override;
-        void takeData(Uint64 size = ULLONG_MAX, Uint64 offset = 0, void* pointerData) override;
+        void insertData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
+        void takeData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
 
         void* map() override;
         void unmap() override;
@@ -70,11 +76,67 @@ namespace RHI {
         void flush(Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
         void invalidate(Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
 
+        VkBuffer getNative() { return this->buffer; }
+        VmaAllocation getMemoryAllocation() { return this->memoryAllocation; }
+
     private:
         VulkanDevice* device;
 
         VkBuffer buffer;
         VmaAllocation memoryAllocation;
+    };
+
+    class VulkanTexture : public Texture {
+    public:
+        VulkanTexture(
+            TextureDescriptor desc,
+            VulkanDevice* d,
+            VkImage i,
+            VmaAllocation ma
+        )
+        : Texture(desc),
+          device{d},
+          image{i},
+          memoryAllocation{ma}
+        {
+
+        }
+
+        ~VulkanTexture();
+
+        std::shared_ptr<TextureView> createView(TextureViewDescriptor descriptor) override;
+
+        VkImage getNative() { return this->image; }
+        VmaAllocation getMemoryAllocation() { return this->memoryAllocation; }
+
+    private:
+        VulkanDevice* device;
+
+        VkImage image;
+        VmaAllocation memoryAllocation;
+    };
+
+    class VulkanTextureView : public TextureView {
+    public:
+        VulkanTextureView(
+            TextureViewDescriptor desc,
+            VulkanDevice* d,
+            VkImageView iv
+        )
+        : TextureView(desc),
+          device{d},
+          imageView{iv}
+        {
+
+        }
+
+        ~VulkanTextureView();
+
+        VkImageView getNative() { return this->imageView; }
+
+    private:
+        VulkanDevice* device;
+        VkImageView imageView;
     };
 
     class VulkanQueue : public Queue {
@@ -95,10 +157,5 @@ namespace RHI {
 
     class VulkanFactory {
         static std::shared_ptr<Device> createDevice(DeviceDescriptor desc);
-
-        static void createInstance(DeviceDescriptor desc, VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger);
-        static void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice* physicalDevice, VkPhysicalDeviceProperties* deviceProperties);
-        static void createLogicalDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice* device, std::vector<std::shared_ptr<Queue>>* queues);
-        static void createMemoryAllocator(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator* memoryAllocator);
     };
 }

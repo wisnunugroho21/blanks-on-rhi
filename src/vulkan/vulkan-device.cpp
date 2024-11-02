@@ -150,27 +150,7 @@ namespace RHI {
         }
     }
 
-    std::shared_ptr<Device> VulkanFactory::createDevice(DeviceDescriptor desc) {
-        VkInstance instance;
-        VkPhysicalDevice physicalDevice;
-        VkDevice device;
-
-        VkDebugUtilsMessengerEXT debugMessenger;
-        VkPhysicalDeviceProperties deviceProperties;
-        VmaAllocator memoryAllocator;
-
-        std::vector<std::shared_ptr<Queue>> queues;
-
-        VulkanFactory::createInstance(desc, &instance, &debugMessenger);
-        VulkanFactory::pickPhysicalDevice(instance, &physicalDevice, &deviceProperties);
-        VulkanFactory::createLogicalDevice(instance, physicalDevice, &device, &queues);
-        VulkanFactory::createMemoryAllocator(instance, physicalDevice, device, &memoryAllocator);
-
-        return std::make_shared<VulkanDevice>(instance, physicalDevice, device, 
-            debugMessenger, deviceProperties, memoryAllocator, queues);
-    }
-
-    void VulkanFactory::createInstance(DeviceDescriptor desc, VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger) {
+    void createInstance(DeviceDescriptor desc, VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger) {
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "";
@@ -236,7 +216,7 @@ namespace RHI {
         }
     }
 
-    void VulkanFactory::pickPhysicalDevice(VkInstance instance, VkPhysicalDevice *selectedPhysicalDevice, VkPhysicalDeviceProperties *deviceProperties) {
+    void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice *selectedPhysicalDevice, VkPhysicalDeviceProperties *deviceProperties) {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -256,7 +236,7 @@ namespace RHI {
         }
     }
 
-    void VulkanFactory::createLogicalDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice *device, std::vector<std::shared_ptr<Queue>>* queues) {
+    void createLogicalDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice *device, std::vector<std::shared_ptr<Queue>>* queues) {
         VkDeviceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
@@ -379,7 +359,7 @@ namespace RHI {
         }
     }
 
-    void VulkanFactory::createMemoryAllocator(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator *memoryAllocator) {
+    void createMemoryAllocator(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator *memoryAllocator) {
         VmaAllocatorCreateInfo allocatorCreateInfo = {};
         allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
         allocatorCreateInfo.physicalDevice = physicalDevice;
@@ -387,5 +367,25 @@ namespace RHI {
         allocatorCreateInfo.instance = instance;
 
         vmaCreateAllocator(&allocatorCreateInfo, memoryAllocator);
+    }
+
+    std::shared_ptr<Device> VulkanFactory::createDevice(DeviceDescriptor desc) {
+        VkInstance instance;
+        VkPhysicalDevice physicalDevice;
+        VkDevice device;
+
+        VkDebugUtilsMessengerEXT debugMessenger;
+        VkPhysicalDeviceProperties deviceProperties;
+        VmaAllocator memoryAllocator;
+
+        std::vector<std::shared_ptr<Queue>> queues;
+
+        createInstance(desc, &instance, &debugMessenger);
+        pickPhysicalDevice(instance, &physicalDevice, &deviceProperties);
+        createLogicalDevice(instance, physicalDevice, &device, &queues);
+        createMemoryAllocator(instance, physicalDevice, device, &memoryAllocator);
+
+        return std::make_shared<VulkanDevice>(desc, instance, physicalDevice, device, 
+            debugMessenger, deviceProperties, memoryAllocator, queues);
     }
 }
