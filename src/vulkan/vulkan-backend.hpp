@@ -126,10 +126,11 @@ namespace RHI {
     public:
         VulkanTextureView(
             TextureViewDescriptor desc,
+            Texture* texture,
             VulkanDevice* d,
             VkImageView iv
         )
-        : TextureView(desc),
+        : TextureView(desc, texture),
           device{d},
           imageView{iv}
         {

@@ -392,7 +392,7 @@ namespace RHI {
 
     class TextureView {
     public: 
-        TextureView(TextureViewDescriptor desc) : desc{desc} {}
+        TextureView(TextureViewDescriptor desc, Texture* texture) : desc{desc} {}
         
     protected:
         TextureViewDescriptor desc;

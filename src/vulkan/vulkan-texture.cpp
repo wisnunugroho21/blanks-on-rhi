@@ -262,7 +262,7 @@ namespace RHI {
             throw std::runtime_error("Failed to create texture view!");
         }
 
-        return std::make_shared<VulkanTextureView>(desc, this->device, imageView);
+        return std::make_shared<VulkanTextureView>(desc, this, this->device, imageView);
     }
 
     VulkanTextureView::~VulkanTextureView() {
