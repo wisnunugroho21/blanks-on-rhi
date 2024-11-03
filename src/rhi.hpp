@@ -493,8 +493,8 @@ namespace RHI {
         eFragment       = 0x0004,
         eTessellCtrl    = 0x0008,
         eTessellEval    = 0x0010,
-        eTask           = 0x0012,
-        eMesh           = 0x0014,
+        eTask           = 0x0020,
+        eMesh           = 0x0040,
     };
 
     enum class BindingType : Uint8 {
