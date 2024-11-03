@@ -476,7 +476,7 @@ namespace RHI {
         }
 
         bool isFiltering() { 
-            return this->desc.magFilter == FilterMode::eNearest && this->desc.minFilter == FilterMode::eNearest; 
+            return this->desc.magFilter == FilterMode::eLinear || this->desc.minFilter == FilterMode::eLinear;
         }
 
     protected:
