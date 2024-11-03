@@ -488,111 +488,79 @@ namespace RHI {
     // ===========================================================================================================================
 
     enum class ShaderStage : FlagsConstant {
-        eCompute         = 0x0001,
-        eVertex          = 0x0002,
-        eFragment        = 0x0004,
-        eTessellation    = 0x0008,
-        eTask            = 0x0010,
-        eMesh            = 0x0020,
+        eCompute        = 0x0001,
+        eVertex         = 0x0002,
+        eFragment       = 0x0004,
+        eTessellCtrl    = 0x0008,
+        eTessellEval    = 0x0010,
+        eTask           = 0x0012,
+        eMesh           = 0x0014,
     };
 
-    enum class BufferBindingType : Uint8 {
-        eUniform,
-        eStorage,
-        eReadOnlyStorage
-    };
-
-    enum class SamplerBindingType : Uint8 {
-        eFiltering,
-        eNonFiltering,
-        eComparision
-    };
-
-    enum class TextureSampleType : Uint8 {
-        eFloat,
-        eUnfilterableFloat,
-        eDepth,
-        eSint,
-        eUint
-    };
-
-    enum class ResourceAccess : Uint8 {
-        eWriteOnly,
-        eReadOnly,
-        eReadWrite
-    };
-
-    struct BufferBindingLayout {
-        BufferBindingType type = BufferBindingType::eUniform;
-        bool hasDynamicOffset = false;
-        Uint64 minBindingSize = 0;
-    };
-
-    struct SamplerBindingLayout {
-        SamplerBindingType type = SamplerBindingType::eFiltering;
-    };
-
-    struct TextureBindingLayout {
-        TextureSampleType sampleType = TextureSampleType::eFloat;
-        TextureViewDimension viewDimension = TextureViewDimension::e2D;
-        bool multisampled = false;
-    };
-
-    struct StorageTextureBindingLayout {
-        ResourceAccess access = ResourceAccess::eWriteOnly;
-        TextureViewDimension viewDimension = TextureViewDimension::e2D;
-        TextureFormat format;
+    enum class BindingType : Uint8 {
+        eUniformBuffer,
+        eStorageBuffer,
+        eSampledTexture,
+        eStorageTexture
     };
 
     struct BindGroupLayoutEntry {
         Uint32 binding;
-        ShaderStageFlags visibility;
-    };
+        ShaderStageFlags shaderStage;
+        BindingType type;
 
-    struct BufferBindGroupLayoutEntry : BindGroupLayoutEntry {
-        BufferBindingLayout buffer;
-    };
+        Uint32 bindCount = 1;
 
-    struct SamplerBindGroupLayoutEntry : BindGroupLayoutEntry {
-        SamplerBindingLayout sampler;
-    };
-
-    struct TextureBindGroupLayoutEntry : BindGroupLayoutEntry {
-        TextureBindingLayout texture;
-    };
-
-    struct StorageTextureBindGroupLayoutEntry : BindGroupLayoutEntry {
-        StorageTextureBindingLayout storageTexture;
+        constexpr BindGroupLayoutEntry& setBinding(Uint32 value) { this->binding = value; return *this; }
+        constexpr BindGroupLayoutEntry& setShaderStage(ShaderStageFlags value) { this->shaderStage = value; return *this; }
+        constexpr BindGroupLayoutEntry& setType(BindingType value) { this->type = value; return *this; }
+        constexpr BindGroupLayoutEntry& setBindCount(Uint32 value) { this->bindCount = value; return *this; }
     };
 
     struct BindGroupLayoutDescriptor {
         std::vector<BindGroupLayoutEntry> entries;
+
+        constexpr BindGroupLayoutDescriptor& addEntry(Uint32 binding, ShaderStageFlags shaderStage, BindingType type, Uint32 bindCount) { 
+            this->entries.emplace_back(
+                BindGroupLayoutEntry()
+                    .setBinding(binding)
+                    .setShaderStage(shaderStage)
+                    .setType(type)
+                    .setBindCount(bindCount)
+            );
+
+            return *this; 
+        }
     };
 
     class BindGroupLayout {
-        BindGroupLayoutDescriptor desc;
-    };
+    public:
+        BindGroupLayout(BindGroupLayoutDescriptor desc) : desc{desc} {}
 
-    struct BufferBinding {
-        Buffer* buffer;
-        Uint64 size = ULLONG_MAX;
-        Uint64 offset = 0;
+    protected:
+        BindGroupLayoutDescriptor desc;
     };
 
     struct BindGroupEntry {
         Uint32 binding;
+
+        constexpr BindGroupEntry& setBinding(Uint32 value) { this->binding = value; return *this; }
     };
 
     struct BufferBindGroupEntry : BindGroupEntry {
-        BufferBinding resource;
+        Buffer* buffer;
+        Uint64 size = ULLONG_MAX;
+        Uint64 offset = 0;
+
+        constexpr BindGroupEntry& setBuffer(Buffer* value) { this->buffer = value; return *this; }
     };
 
     struct TextureBindGroupEntry : BindGroupEntry {
-        TextureView* resource;
+        TextureView* textureView;
     };
 
-    struct SamplerBindGroupEntry : BindGroupEntry {
-        Sampler* resource;
+    struct SamplerBindGroupEntry : TextureBindGroupEntry {
+        Sampler* sampler;
     };
 
     struct BindGroupDescriptor {
@@ -943,6 +911,12 @@ namespace RHI {
     // Barrier
     // ===========================================================================================================================
 
+    enum class ResourceAccess : Uint8 {
+        eWriteOnly,
+        eReadOnly,
+        eReadWrite
+    };
+    
     struct MemoryBarrier {
         ResourceAccess srcAccess;
         ResourceAccess dstAccess;
@@ -1266,8 +1240,8 @@ namespace RHI {
 		virtual std::shared_ptr<Buffer> createBuffer(BufferDescriptor desc) = 0;
 		virtual std::shared_ptr<Texture> createTexture(TextureDescriptor desc) = 0;
 		virtual std::shared_ptr<Sampler> createSampler(SamplerDescriptor desc) = 0;
+		virtual std::shared_ptr<BindGroupLayout> createBindGroupLayout(BindGroupLayoutDescriptor desc) = 0;
 
-		BindGroupLayout createBindGroupLayout(BindGroupLayoutDescriptor desc);
 		PipelineLayout createPipelineLayout(PipelineLayoutDescriptor desc);
 		BindGroup createBindGroup(BindGroupDescriptor desc);
 

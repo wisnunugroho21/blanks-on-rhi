@@ -367,7 +367,35 @@ namespace RHI {
         allocatorCreateInfo.device = device;
         allocatorCreateInfo.instance = instance;
 
-        vmaCreateAllocator(&allocatorCreateInfo, memoryAllocator);
+        if (vmaCreateAllocator(&allocatorCreateInfo, memoryAllocator) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create memory allocator!");
+        }
+    }
+
+    void createDescriptorPool(VkDevice device, VkDescriptorPool* descriptorPool) {
+        VkDescriptorType desiredDescriptor[4] = {
+            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+        };
+
+        VkDescriptorPoolSize descPoolSizes[4];
+        for (uint8_t i = 0; i < 4; i++) {
+            VkDescriptorPoolSize descPoolSize;
+            descPoolSize.type = desiredDescriptor[i];
+            descPoolSize.descriptorCount = 100;
+        }
+
+        VkDescriptorPoolCreateInfo descPoolInfo;
+        descPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        descPoolInfo.maxSets = 15;
+        descPoolInfo.poolSizeCount = 4;
+        descPoolInfo.pPoolSizes = descPoolSizes;
+
+        if (vkCreateDescriptorPool(device, &descPoolInfo, nullptr, descriptorPool) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create descriptor pool!");
+        }
     }
 
     std::shared_ptr<Device> VulkanFactory::createDevice(DeviceDescriptor desc) {
@@ -380,13 +408,15 @@ namespace RHI {
         VmaAllocator memoryAllocator;
 
         std::vector<std::shared_ptr<Queue>> queues;
+        VkDescriptorPool descriptorPool;
 
         createInstance(desc, &instance, &debugMessenger);
         pickPhysicalDevice(instance, &physicalDevice, &deviceProperties);
         createLogicalDevice(instance, physicalDevice, &device, &queues);
         createMemoryAllocator(instance, physicalDevice, device, &memoryAllocator);
+        createDescriptorPool(device, &descriptorPool);
 
         return std::make_shared<VulkanDevice>(desc, instance, physicalDevice, device, 
-            debugMessenger, deviceProperties, memoryAllocator, queues);
+            debugMessenger, deviceProperties, memoryAllocator, queues, descriptorPool);
     }
 }

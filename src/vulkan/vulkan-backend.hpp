@@ -17,7 +17,8 @@ namespace RHI {
             VkDebugUtilsMessengerEXT dm,
             VkPhysicalDeviceProperties dp,
             VmaAllocator vma,
-            std::vector<std::shared_ptr<Queue>> q            
+            std::vector<std::shared_ptr<Queue>> q,
+            VkDescriptorPool dsp            
         )
         : Device(desc),
           instance{i},
@@ -26,17 +27,20 @@ namespace RHI {
           debugMessenger{dm},
           deviceProperties{dp},
           memoryAllocator{vma},
-          queues{q}
+          queues{q},
+          descriptorPool{dsp}
         {
 
         }
         
         VkDevice getNative() { return this->device; }
         VmaAllocator getMemoryAllocator() { return this->memoryAllocator; }
+        VkDescriptorPool getDescriptorPool() { return this->descriptorPool; }
 
         std::shared_ptr<Buffer> createBuffer(BufferDescriptor descriptor) override;
         std::shared_ptr<Texture> createTexture(TextureDescriptor descriptor) override;
         std::shared_ptr<Sampler> createSampler(SamplerDescriptor desc) override;
+        std::shared_ptr<BindGroupLayout> createBindGroupLayout(BindGroupLayoutDescriptor desc) override;
         
     private:
         VkInstance instance;
@@ -48,6 +52,7 @@ namespace RHI {
         VmaAllocator memoryAllocator;
 
         std::vector<std::shared_ptr<Queue>> queues;
+        VkDescriptorPool descriptorPool;
     };
 
     class VulkanBuffer : public Buffer {
@@ -161,6 +166,27 @@ namespace RHI {
     private:
         VulkanDevice* device;
         VkSampler sampler;
+    };
+
+    class VulkanBindGroupLayout : public BindGroupLayout {
+    public:
+        VulkanBindGroupLayout(
+            BindGroupLayoutDescriptor desc,
+            VulkanDevice* d,
+            VkDescriptorSetLayout dsl
+        )
+        : BindGroupLayout(desc),
+          device{d},
+          descSetLayout{dsl}
+        {
+
+        }
+
+        ~VulkanBindGroupLayout();
+    
+    private:
+        VulkanDevice* device;
+        VkDescriptorSetLayout descSetLayout;
     };
 
     class VulkanQueue : public Queue {

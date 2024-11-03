@@ -1,7 +1,5 @@
 #include "vulkan-backend.hpp"
 
-#include <utility>
-
 namespace RHI {
     VkSamplerAddressMode convertAddressModeToVulkan(AddressMode addressMode) {
         switch (addressMode) {
