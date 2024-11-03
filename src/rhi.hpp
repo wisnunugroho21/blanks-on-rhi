@@ -383,7 +383,7 @@ namespace RHI {
     public:
         Texture(TextureDescriptor desc) : desc{desc} {}
 
-    private:
+    protected:
         TextureDescriptor desc;
         TextureState state;
         
@@ -394,7 +394,7 @@ namespace RHI {
     public: 
         TextureView(TextureViewDescriptor desc) : desc{desc} {}
         
-    private:
+    protected:
         TextureViewDescriptor desc;
         Texture* texture;
     };
@@ -404,9 +404,10 @@ namespace RHI {
     // ===========================================================================================================================
 
     enum class AddressMode : Uint8 {
-        eClampToEdge,
         eRepeat,
-        eMirrorRepeat
+        eMirrorRepeat,
+        eClampToEdge,
+        eClampToBorder
     };
 
     enum class FilterMode : Uint8 {
@@ -419,10 +420,10 @@ namespace RHI {
         eLinear
     };
 
-    enum CompareFunction : Uint8 {
+    enum class CompareFunction : Uint8 {
         eNever,
-        eLess,
         eEqual,
+        eLess,
         eLessEqual,
         eGreater,
         eNotEqual,
@@ -430,25 +431,56 @@ namespace RHI {
         eAlways,
     };
 
+    enum class BorderColor : Uint8 {
+        eFloatTransparentBlack,
+        eIntTransparentBlack,
+        eFloatOpaqueBlack,
+        eIntOpaqueBlack,
+        eFloatOpaqueWhite,
+        eIntOpaqueWhite
+    };
+
     struct SamplerDescriptor {
-        AddressMode addressModeU = AddressMode::eClampToEdge;
-        AddressMode addressModeV = AddressMode::eClampToEdge;
-        AddressMode addressModeW = AddressMode::eClampToEdge;
+        AddressMode addressModeU = AddressMode::eClampToBorder;
+        AddressMode addressModeV = AddressMode::eClampToBorder;
+        AddressMode addressModeW = AddressMode::eClampToBorder;
         FilterMode magFilter = FilterMode::eNearest;
         FilterMode minFilter = FilterMode::eNearest;
         MipmapFilterMode mipmapFilter = MipmapFilterMode::eNearest;
         CompareFunction compare = CompareFunction::eNever;
+        BorderColor borderColor = BorderColor::eFloatOpaqueBlack;
 
         Float32 lodMinClamp = 0;
         Float32 lodMaxClamp = 32;
         Uint32 maxAnisotropy = 1;
+
+        constexpr SamplerDescriptor& setAddressModeU(AddressMode value) { this->addressModeU = value; return *this; }
+        constexpr SamplerDescriptor& setAddressModeV(AddressMode value) { this->addressModeV = value; return *this; }
+        constexpr SamplerDescriptor& setAddressModeW(AddressMode value) { this->addressModeW = value; return *this; }
+        constexpr SamplerDescriptor& setMagFilter(FilterMode value) { this->magFilter = value; return *this; }
+        constexpr SamplerDescriptor& setMinFilter(FilterMode value) { this->minFilter = value; return *this; }
+        constexpr SamplerDescriptor& setMipmapFilter(MipmapFilterMode value) { this->mipmapFilter = value; return *this; }
+        constexpr SamplerDescriptor& setCompare(CompareFunction value) { this->compare = value; return *this; }
+        constexpr SamplerDescriptor& setBorderColor(BorderColor value) { this->borderColor = value; return *this; }
+        constexpr SamplerDescriptor& setLodMinClamp(Float32 value) { this->lodMinClamp = value; return *this; }
+        constexpr SamplerDescriptor& setLodMaxClamp(Float32 value) { this->lodMaxClamp = value; return *this; }
+        constexpr SamplerDescriptor& setMaxAnisotropy(Uint32 value) { this->maxAnisotropy = value; return *this; }
     };
 
     class Sampler {
-        SamplerDescriptor desc;
+    public:
+        Sampler(SamplerDescriptor desc) : desc{desc} {}
 
-        bool isComparison;
-        bool isFiltering;
+        bool isComparison() { 
+            return this->desc.compare != CompareFunction::eNever; 
+        }
+
+        bool isFiltering() { 
+            return this->desc.magFilter == FilterMode::eNearest && this->desc.minFilter == FilterMode::eNearest; 
+        }
+
+    protected:
+        SamplerDescriptor desc;
     };
 
     // ===========================================================================================================================
@@ -1233,8 +1265,7 @@ namespace RHI {
 
 		virtual std::shared_ptr<Buffer> createBuffer(BufferDescriptor desc) = 0;
 		virtual std::shared_ptr<Texture> createTexture(TextureDescriptor desc) = 0;
-
-		Sampler createSampler(SamplerDescriptor desc);
+		virtual std::shared_ptr<Sampler> createSampler(SamplerDescriptor desc) = 0;
 
 		BindGroupLayout createBindGroupLayout(BindGroupLayoutDescriptor desc);
 		PipelineLayout createPipelineLayout(PipelineLayoutDescriptor desc);

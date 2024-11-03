@@ -36,6 +36,7 @@ namespace RHI {
 
         std::shared_ptr<Buffer> createBuffer(BufferDescriptor descriptor) override;
         std::shared_ptr<Texture> createTexture(TextureDescriptor descriptor) override;
+        std::shared_ptr<Sampler> createSampler(SamplerDescriptor desc) override;
         
     private:
         VkInstance instance;
@@ -137,6 +138,29 @@ namespace RHI {
     private:
         VulkanDevice* device;
         VkImageView imageView;
+    };
+
+    class VulkanSampler : public Sampler {
+    public:
+        VulkanSampler(
+            SamplerDescriptor desc,
+            VulkanDevice* d,
+            VkSampler s
+        )
+        : Sampler(desc),
+          device{d},
+          sampler{s}
+        {
+
+        }
+
+        ~VulkanSampler();
+
+        VkSampler getNative() { return this->sampler; }
+
+    private:
+        VulkanDevice* device;
+        VkSampler sampler;
     };
 
     class VulkanQueue : public Queue {
