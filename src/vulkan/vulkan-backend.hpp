@@ -41,6 +41,7 @@ namespace RHI {
         std::shared_ptr<Texture> createTexture(TextureDescriptor descriptor) override;
         std::shared_ptr<Sampler> createSampler(SamplerDescriptor desc) override;
         std::shared_ptr<BindGroupLayout> createBindGroupLayout(BindGroupLayoutDescriptor desc) override;
+        std::shared_ptr<BindGroup> createBindGroup(BindGroupDescriptor desc) override;
         
     private:
         VkInstance instance;
@@ -63,7 +64,7 @@ namespace RHI {
             VkBuffer b,
             VmaAllocation ma
         )
-        : Buffer(desc),
+        : desc{desc},
           device{d}, 
           buffer{b},
           memoryAllocation{ma}
@@ -72,6 +73,11 @@ namespace RHI {
         }
 
         ~VulkanBuffer();
+
+        BufferDescriptor getDesc() override { return this->desc; }
+
+        void* getCurrentMapped() override { return this->mapped; }
+		BufferMapState getMapState() override { return this->mapState; }
 
         void insertData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
         void takeData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
@@ -84,6 +90,12 @@ namespace RHI {
 
         VkBuffer getNative() { return this->buffer; }
         VmaAllocation getMemoryAllocation() { return this->memoryAllocation; }
+
+    protected:
+        BufferDescriptor desc;
+
+        void* mapped;
+        BufferMapState mapState;
 
     private:
         VulkanDevice* device;
@@ -100,7 +112,7 @@ namespace RHI {
             VkImage i,
             VmaAllocation ma
         )
-        : Texture(desc),
+        : desc{desc},
           device{d},
           image{i},
           memoryAllocation{ma}
@@ -110,10 +122,15 @@ namespace RHI {
 
         ~VulkanTexture();
 
+        TextureDescriptor getDesc() override { return this->desc; }
+
         std::shared_ptr<TextureView> createView(TextureViewDescriptor descriptor) override;
 
         VkImage getNative() { return this->image; }
         VmaAllocation getMemoryAllocation() { return this->memoryAllocation; }
+
+    protected:
+        TextureDescriptor desc;
 
     private:
         VulkanDevice* device;
@@ -126,11 +143,12 @@ namespace RHI {
     public:
         VulkanTextureView(
             TextureViewDescriptor desc,
-            Texture* texture,
+            Texture* t,
             VulkanDevice* d,
             VkImageView iv
         )
-        : TextureView(desc, texture),
+        : desc{desc},
+          texture{t},
           device{d},
           imageView{iv}
         {
@@ -139,7 +157,13 @@ namespace RHI {
 
         ~VulkanTextureView();
 
+        TextureViewDescriptor getDesc() override { return this->desc; }
+
         VkImageView getNative() { return this->imageView; }
+
+    protected:
+        TextureViewDescriptor desc;
+        Texture* texture;
 
     private:
         VulkanDevice* device;
@@ -153,7 +177,7 @@ namespace RHI {
             VulkanDevice* d,
             VkSampler s
         )
-        : Sampler(desc),
+        : desc{desc},
           device{d},
           sampler{s}
         {
@@ -162,7 +186,20 @@ namespace RHI {
 
         ~VulkanSampler();
 
+        SamplerDescriptor getDesc() override { return this->desc; }
+
+        bool isComparison() override { 
+            return this->desc.compare != CompareFunction::eNever; 
+        }
+
+        bool isFiltering() override { 
+            return this->desc.magFilter == FilterMode::eLinear || this->desc.minFilter == FilterMode::eLinear;
+        }
+
         VkSampler getNative() { return this->sampler; }
+
+    protected:
+        SamplerDescriptor desc;
 
     private:
         VulkanDevice* device;
@@ -176,7 +213,7 @@ namespace RHI {
             VulkanDevice* d,
             VkDescriptorSetLayout dsl
         )
-        : BindGroupLayout(desc),
+        : desc{desc},
           device{d},
           descSetLayout{dsl}
         {
@@ -184,10 +221,39 @@ namespace RHI {
         }
 
         ~VulkanBindGroupLayout();
+
+        BindGroupLayoutDescriptor getDesc() override { return this->desc; }
+
+        VkDescriptorSetLayout getNative() { return this->descSetLayout; }
+
+    protected:
+        BindGroupLayoutDescriptor desc;
     
     private:
         VulkanDevice* device;
         VkDescriptorSetLayout descSetLayout;
+    };
+
+    class VulkanBindGroup : public BindGroup {
+    public:
+        VulkanBindGroup(
+            BindGroupDescriptor desc,
+            VulkanDevice* d,
+            VkDescriptorSet ds
+        )
+        : desc{desc},
+          device{d},
+          descSet{ds}
+        {
+
+        }
+
+    protected:
+        BindGroupDescriptor desc;
+
+    private:
+        VulkanDevice* device;
+        VkDescriptorSet descSet;
     };
 
     class VulkanQueue : public Queue {

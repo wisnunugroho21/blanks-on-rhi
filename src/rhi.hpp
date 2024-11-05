@@ -141,10 +141,10 @@ namespace RHI {
 
     class Buffer {
     public:
-        Buffer(BufferDescriptor desc) : desc{desc} {}
+        virtual BufferDescriptor getDesc() = 0;
 
-        void* getMapped() { return this->mapped; }
-		BufferMapState getMapState() { return this->mapState; }
+        virtual void* getCurrentMapped() = 0;
+		virtual BufferMapState getMapState() = 0;
 
         virtual void insertData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
         virtual void takeData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
@@ -154,12 +154,6 @@ namespace RHI {
 
         virtual void flush(Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
         virtual void invalidate(Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
-
-    protected:
-        BufferDescriptor desc;
-
-        void* mapped;
-        BufferMapState mapState;
     };
 
     // ===========================================================================================================================
@@ -381,22 +375,14 @@ namespace RHI {
 
     class Texture {
     public:
-        Texture(TextureDescriptor desc) : desc{desc} {}
-
-    protected:
-        TextureDescriptor desc;
-        TextureState state;
-        
+        virtual TextureDescriptor getDesc() = 0;
         virtual std::shared_ptr<TextureView> createView(TextureViewDescriptor desc) = 0;
     };
 
     class TextureView {
-    public: 
-        TextureView(TextureViewDescriptor desc, Texture* texture) : desc{desc} {}
-        
-    protected:
-        TextureViewDescriptor desc;
-        Texture* texture;
+    public:
+        virtual TextureViewDescriptor getDesc() = 0;
+        virtual Texture* getTexture() = 0;
     };
 
     // ===========================================================================================================================
@@ -469,18 +455,10 @@ namespace RHI {
 
     class Sampler {
     public:
-        Sampler(SamplerDescriptor desc) : desc{desc} {}
+        virtual SamplerDescriptor getDesc() = 0;
 
-        bool isComparison() { 
-            return this->desc.compare != CompareFunction::eNever; 
-        }
-
-        bool isFiltering() { 
-            return this->desc.magFilter == FilterMode::eLinear || this->desc.minFilter == FilterMode::eLinear;
-        }
-
-    protected:
-        SamplerDescriptor desc;
+        virtual bool isComparison() = 0;
+        virtual bool isFiltering() = 0;
     };
 
     // ===========================================================================================================================
@@ -501,7 +479,8 @@ namespace RHI {
         eUniformBuffer,
         eStorageBuffer,
         eSampledTexture,
-        eStorageTexture
+        eStorageTexture,
+        eSampler
     };
 
     struct BindGroupLayoutEntry {
@@ -520,7 +499,7 @@ namespace RHI {
     struct BindGroupLayoutDescriptor {
         std::vector<BindGroupLayoutEntry> entries;
 
-        constexpr BindGroupLayoutDescriptor& addEntry(Uint32 binding, ShaderStageFlags shaderStage, BindingType type, Uint32 bindCount) { 
+        constexpr BindGroupLayoutDescriptor& addEntry(Uint32 binding, ShaderStageFlags shaderStage, BindingType type, Uint32 bindCount = 1) { 
             this->entries.emplace_back(
                 BindGroupLayoutEntry()
                     .setBinding(binding)
@@ -535,16 +514,13 @@ namespace RHI {
 
     class BindGroupLayout {
     public:
-        BindGroupLayout(BindGroupLayoutDescriptor desc) : desc{desc} {}
-
-    protected:
-        BindGroupLayoutDescriptor desc;
+        virtual BindGroupLayoutDescriptor getDesc() = 0;
     };
 
     struct BindGroupEntry {
         Uint32 binding;
 
-        constexpr BindGroupEntry& setBinding(Uint32 value) { this->binding = value; return *this; }
+        virtual BindGroupEntry& setBinding(Uint32 value) = 0;
     };
 
     struct BufferBindGroupEntry : BindGroupEntry {
@@ -552,20 +528,61 @@ namespace RHI {
         Uint64 size = ULLONG_MAX;
         Uint64 offset = 0;
 
-        constexpr BindGroupEntry& setBuffer(Buffer* value) { this->buffer = value; return *this; }
+        BindGroupEntry& setBinding(Uint32 value) override { this->binding = value; return *this; }
+
+        constexpr BufferBindGroupEntry& setBuffer(Buffer* value) { this->buffer = value; return *this; }
+        constexpr BufferBindGroupEntry& setSize(Uint64 value) { this->size = value; return *this; }
+        constexpr BufferBindGroupEntry& setOffset(Uint64 value) { this->offset = value; return *this; }
     };
 
     struct TextureBindGroupEntry : BindGroupEntry {
         TextureView* textureView;
+
+        BindGroupEntry& setBinding(Uint32 value) override { this->binding = value; return *this; }
+        constexpr TextureBindGroupEntry& setTextureView(TextureView* value) { this->textureView = value; return *this; }
     };
 
-    struct SamplerBindGroupEntry : TextureBindGroupEntry {
+    struct SamplerBindGroupEntry : BindGroupEntry {
         Sampler* sampler;
+
+        BindGroupEntry& setBinding(Uint32 value) override { this->binding = value; return *this; }
+        constexpr SamplerBindGroupEntry& setSampler(Sampler* value) { this->sampler = value; return *this; }
     };
 
     struct BindGroupDescriptor {
         BindGroupLayout* layout;
         std::vector<BindGroupEntry*> entries;
+
+        constexpr BindGroupDescriptor& setLayout(BindGroupLayout* value) { this->layout = value; return *this; }
+
+        constexpr BindGroupDescriptor& addBuffer(Uint32 binding, Buffer* buffer, Uint64 size = ULLONG_MAX, Uint64 offset = 0) {
+            BufferBindGroupEntry* groupEntry = new BufferBindGroupEntry();
+            groupEntry->setBinding(binding);
+            groupEntry->setBuffer(buffer);
+            groupEntry->setSize(size);
+            groupEntry->setOffset(offset);
+
+            this->entries.emplace_back(groupEntry);
+            return *this;
+        }
+
+        constexpr BindGroupDescriptor& addTextureView(Uint32 binding, TextureView* textureView) {
+            TextureBindGroupEntry* groupEntry = new TextureBindGroupEntry();
+            groupEntry->setBinding(binding);
+            groupEntry->setTextureView(textureView);
+
+            this->entries.emplace_back(groupEntry);
+            return *this;
+        }
+
+        constexpr BindGroupDescriptor& addSampler(Uint32 binding, Sampler* sampler) {
+            SamplerBindGroupEntry* groupEntry = new SamplerBindGroupEntry();
+            groupEntry->setBinding(binding);
+            groupEntry->setSampler(sampler);
+
+            this->entries.emplace_back(groupEntry);
+            return *this;
+        }
     };
 
     struct PipelineLayoutDescriptor {
@@ -573,7 +590,8 @@ namespace RHI {
     };
 
     class BindGroup {
-        BindGroupDescriptor desc;
+    public:
+        virtual BindGroupDescriptor getDesc() =  0;
     };
 
     class PipelineLayout {
@@ -1016,9 +1034,9 @@ namespace RHI {
     // ===========================================================================================================================
 
     class BindingCommandsMixin {
-        virtual void setBindGroup(Uint32 index, BindGroup bindGroup, std::vector<Uint32> dynamicOffsets) = 0;
+        virtual void setBindGroup(Uint32 index, BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets) = 0;
 
-        virtual void setBindGroup(Uint32 index, BindGroup bindGroup, Uint32 dynamicOffsetsData[],
+        virtual void setBindGroup(Uint32 index, BindGroup* bindGroup, Uint32 dynamicOffsetsData[],
             Uint64 dynamicOffsetsDataStart, Uint32 dynamicOffsetsDataLength) = 0;
     };
 
@@ -1241,9 +1259,9 @@ namespace RHI {
 		virtual std::shared_ptr<Texture> createTexture(TextureDescriptor desc) = 0;
 		virtual std::shared_ptr<Sampler> createSampler(SamplerDescriptor desc) = 0;
 		virtual std::shared_ptr<BindGroupLayout> createBindGroupLayout(BindGroupLayoutDescriptor desc) = 0;
+        virtual std::shared_ptr<BindGroup> createBindGroup(BindGroupDescriptor desc) = 0;
 
 		PipelineLayout createPipelineLayout(PipelineLayoutDescriptor desc);
-		BindGroup createBindGroup(BindGroupDescriptor desc);
 
 		ShaderModule createShaderModule(ShaderModuleDescriptor desc);
 		ComputePipeline createComputePipeline(ComputePipelineDescriptor desc);

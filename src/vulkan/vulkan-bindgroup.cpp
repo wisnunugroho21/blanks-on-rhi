@@ -7,8 +7,9 @@ namespace RHI {
         switch (type) {
             case BindingType::eUniformBuffer : return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             case BindingType::eStorageBuffer : return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            case BindingType::eSampledTexture : return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            case BindingType::eSampledTexture : return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
             case BindingType::eStorageTexture : return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+            case BindingType::eSampler : return VK_DESCRIPTOR_TYPE_SAMPLER;
             
             default: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         }
@@ -78,5 +79,71 @@ namespace RHI {
 
     VulkanBindGroupLayout::~VulkanBindGroupLayout() {
         vkDestroyDescriptorSetLayout(this->device->getNative(), this->descSetLayout, nullptr);
+    }
+
+    std::shared_ptr<BindGroup> VulkanDevice::createBindGroup(BindGroupDescriptor desc) {
+        VkDescriptorSet descSet;
+        std::vector<VkWriteDescriptorSet> writeDescSets(desc.entries.size());
+
+        std::vector<BindGroupLayoutEntry> layoutEntries = desc.layout->getDesc().entries;
+
+        for (uint8_t i = 0; i < desc.entries.size(); i++) {
+            BindGroupEntry* entry = desc.entries[i];
+
+            int8_t layoutIndex = -1;
+            for (int8_t j = 0; j < layoutEntries.size(); j++) {
+                if (entry->binding == layoutEntries[j].binding) {
+                    layoutIndex = j;
+                    break;
+                }
+            }
+
+            if (layoutIndex < 0) {
+                throw std::runtime_error("No binding in group founded in layout");
+            }
+
+            writeDescSets[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writeDescSets[i].dstSet = descSet;
+            writeDescSets[i].dstBinding = entry->binding;
+            writeDescSets[i].descriptorCount = 1;
+            writeDescSets[i].descriptorType = convertBindTypeIntoVulkan(layoutEntries[layoutIndex].type);
+
+            BufferBindGroupEntry* bufferEntry = dynamic_cast<BufferBindGroupEntry*>(entry);
+
+            if (bufferEntry != nullptr) {
+                VkDescriptorBufferInfo bufferInfo;
+                bufferInfo.buffer = static_cast<VulkanBuffer*>(bufferEntry->buffer)->getNative();
+                bufferInfo.range = bufferEntry->size == ULLONG_MAX ? VK_WHOLE_SIZE : bufferEntry->size;
+                bufferInfo.offset = bufferEntry->offset;
+
+                continue;
+            }
+
+            TextureBindGroupEntry* textureEntry = dynamic_cast<TextureBindGroupEntry*>(entry);
+
+            if (textureEntry != nullptr) {
+                VulkanTextureView* txtView = dynamic_cast<VulkanTextureView*>(textureEntry->textureView);
+
+                VkDescriptorImageInfo imageInfo;
+                imageInfo.imageView = txtView->getNative();
+                imageInfo.imageLayout = (txtView->getTexture()->getDesc().usage & std::to_underlying(TextureUsage::eTextureBinding)) 
+                    ? VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
+                    : VK_IMAGE_LAYOUT_GENERAL;
+
+                continue;
+            }
+
+            SamplerBindGroupEntry* samplerEntry = dynamic_cast<SamplerBindGroupEntry*>(entry);
+
+            if (textureEntry != nullptr) {
+                VkDescriptorImageInfo imageInfo;
+                imageInfo.sampler = dynamic_cast<VulkanSampler*>(samplerEntry->sampler)->getNative();
+            }
+        }
+
+        vkUpdateDescriptorSets(this->device, static_cast<Uint32>(writeDescSets.size()), 
+            writeDescSets.data(), 0, nullptr);
+
+        return std::make_shared<BindGroup>(desc, this, descSet);
     }
 }
