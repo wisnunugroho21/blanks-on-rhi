@@ -83,9 +83,21 @@ namespace RHI {
 
     std::shared_ptr<BindGroup> VulkanDevice::createBindGroup(BindGroupDescriptor desc) {
         VkDescriptorSet descSet;
-        std::vector<VkWriteDescriptorSet> writeDescSets(desc.entries.size());
 
+        VkDescriptorSetAllocateInfo descSetAllocInfo{};
+        descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        descSetAllocInfo.descriptorPool = this->getDescriptorPool();
+        descSetAllocInfo.descriptorSetCount = 1;
+
+        if (vkAllocateDescriptorSets(this->device, &descSetAllocInfo, &descSet) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to allocate descriptor set!");
+        }
+
+        std::vector<VkWriteDescriptorSet> writeDescSets(desc.entries.size());
         std::vector<BindGroupLayoutEntry> layoutEntries = desc.layout->getDesc().entries;
+
+        std::vector<VkDescriptorBufferInfo> bufferInfos;
+        std::vector<VkDescriptorImageInfo> imageInfos;
 
         for (uint8_t i = 0; i < desc.entries.size(); i++) {
             BindGroupEntry* entry = desc.entries[i];
@@ -116,6 +128,9 @@ namespace RHI {
                 bufferInfo.range = bufferEntry->size == ULLONG_MAX ? VK_WHOLE_SIZE : bufferEntry->size;
                 bufferInfo.offset = bufferEntry->offset;
 
+                bufferInfos.emplace_back(bufferInfo);
+                writeDescSets[i].pBufferInfo = &bufferInfos[bufferInfos.size() - 1];
+
                 continue;
             }
 
@@ -130,6 +145,9 @@ namespace RHI {
                     ? VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
                     : VK_IMAGE_LAYOUT_GENERAL;
 
+                imageInfos.emplace_back(imageInfo);
+                writeDescSets[i].pImageInfo = &imageInfos[imageInfos.size() - 1];
+
                 continue;
             }
 
@@ -138,6 +156,11 @@ namespace RHI {
             if (textureEntry != nullptr) {
                 VkDescriptorImageInfo imageInfo;
                 imageInfo.sampler = dynamic_cast<VulkanSampler*>(samplerEntry->sampler)->getNative();
+
+                imageInfos.emplace_back(imageInfo);
+                writeDescSets[i].pImageInfo = &imageInfos[imageInfos.size() - 1];
+
+                continue;
             }
         }
 
