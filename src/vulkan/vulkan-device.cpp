@@ -233,8 +233,11 @@ namespace RHI {
             vkGetPhysicalDeviceProperties(physicalDevice, deviceProperties);
             if (deviceProperties->deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
                 *selectedPhysicalDevice = physicalDevice;
+                return;
             }
         }
+
+        *selectedPhysicalDevice = physicalDevices[physicalDevices.size() - 1];
     }
 
     void createLogicalDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice *device, std::vector<std::shared_ptr<Queue>>* queues) {
