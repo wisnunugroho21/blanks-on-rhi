@@ -587,6 +587,10 @@ namespace RHI {
 
     struct PipelineLayoutDescriptor {
         std::vector<BindGroupLayout*> bindGroupLayouts;
+
+        constexpr PipelineLayoutDescriptor& addLayout(BindGroupLayout* layout) {
+            bindGroupLayouts.emplace_back(layout);
+        }
     };
 
     class BindGroup {
@@ -595,7 +599,8 @@ namespace RHI {
     };
 
     class PipelineLayout {
-        PipelineLayoutDescriptor desc;
+    public:
+        virtual PipelineLayoutDescriptor getDesc() = 0;
     };
 
     // ===========================================================================================================================
@@ -623,7 +628,7 @@ namespace RHI {
 
     struct ShaderModuleCompilationHint {
         String entryPoint;
-        PipelineLayout layout;
+        PipelineLayout* layout;
     };
 
     struct ShaderModuleDescriptor {
@@ -854,7 +859,7 @@ namespace RHI {
     };
 
     struct PipelineDescriptorBase {
-        PipelineLayout layout;
+        PipelineLayout* layout;
     };
 
     struct ComputePipelineDescriptor : PipelineDescriptorBase {
@@ -1260,8 +1265,7 @@ namespace RHI {
 		virtual std::shared_ptr<Sampler> createSampler(SamplerDescriptor desc) = 0;
 		virtual std::shared_ptr<BindGroupLayout> createBindGroupLayout(BindGroupLayoutDescriptor desc) = 0;
         virtual std::shared_ptr<BindGroup> createBindGroup(BindGroupDescriptor desc) = 0;
-
-		PipelineLayout createPipelineLayout(PipelineLayoutDescriptor desc);
+		virtual std::shared_ptr<PipelineLayout> createPipelineLayout(PipelineLayoutDescriptor desc) = 0;
 
 		ShaderModule createShaderModule(ShaderModuleDescriptor desc);
 		ComputePipeline createComputePipeline(ComputePipelineDescriptor desc);

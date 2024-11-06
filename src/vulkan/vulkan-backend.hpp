@@ -42,6 +42,7 @@ namespace RHI {
         std::shared_ptr<Sampler> createSampler(SamplerDescriptor desc) override;
         std::shared_ptr<BindGroupLayout> createBindGroupLayout(BindGroupLayoutDescriptor desc) override;
         std::shared_ptr<BindGroup> createBindGroup(BindGroupDescriptor desc) override;
+        std::shared_ptr<PipelineLayout> createPipelineLayout(PipelineLayoutDescriptor desc) override;
         
     private:
         VkInstance instance;
@@ -254,6 +255,34 @@ namespace RHI {
     private:
         VulkanDevice* device;
         VkDescriptorSet descSet;
+    };
+
+    class VulkanPipelineLayout : public PipelineLayout {
+    public:
+        VulkanPipelineLayout(
+            PipelineLayoutDescriptor desc,
+            VulkanDevice* d,
+            VkPipelineLayout pl
+        )
+        : desc{desc},
+          device{d},
+          pipelineLayout{pl}
+        {
+
+        }
+
+        ~VulkanPipelineLayout();
+
+        PipelineLayoutDescriptor getDesc() override { return this->desc; }
+
+        VkPipelineLayout getNative() { return this->pipelineLayout; }
+
+    protected: 
+        PipelineLayoutDescriptor desc;
+
+    private:
+        VulkanDevice* device;
+        VkPipelineLayout pipelineLayout;
     };
 
     class VulkanQueue : public Queue {
