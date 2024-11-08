@@ -43,6 +43,7 @@ namespace RHI {
         std::shared_ptr<BindGroupLayout> createBindGroupLayout(BindGroupLayoutDescriptor desc) override;
         std::shared_ptr<BindGroup> createBindGroup(BindGroupDescriptor desc) override;
         std::shared_ptr<PipelineLayout> createPipelineLayout(PipelineLayoutDescriptor desc) override;
+        std::shared_ptr<ShaderModule> createShaderModule(ShaderModuleDescriptor desc) override;
         
     private:
         VkInstance instance;
@@ -283,6 +284,30 @@ namespace RHI {
     private:
         VulkanDevice* device;
         VkPipelineLayout pipelineLayout;
+    };
+
+    class VulkanShaderModule : public ShaderModule {
+    public:
+        VulkanShaderModule(
+            ShaderModuleDescriptor desc,
+            VulkanDevice* d,
+            VkShaderModule sm
+        )
+        : desc{desc},
+          device{d},
+          shaderModule{sm}
+        {
+
+        }
+
+        ~VulkanShaderModule();
+
+    protected:
+        ShaderModuleDescriptor desc;
+
+    private:
+        VulkanDevice* device;
+        VkShaderModule shaderModule;
     };
 
     class VulkanQueue : public Queue {

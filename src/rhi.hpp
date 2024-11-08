@@ -690,39 +690,13 @@ namespace RHI {
     // Shader Module
     // ===========================================================================================================================
 
-    enum class CompilationMessageType : Uint8 {
-        Error,
-        Warning,
-        Info
-    };
-
-    struct CompilationMessage {
-        String message;
-        CompilationMessageType type;
-        Uint64 lineNum;
-        Uint64 linePos;
-        Uint64 offset;
-        Uint64 length;
-    };
-
-    struct CompilationInfo {
-        CompilationMessage messages[];
-    };
-
-    struct ShaderModuleCompilationHint {
-        String entryPoint;
-        PipelineLayout* layout;
-    };
-
     struct ShaderModuleDescriptor {
-        String code;
-        std::vector<ShaderModuleCompilationHint> compilationHints{};
+        String filename;
     };
 
     class ShaderModule {
-        ShaderModuleDescriptor desc;
-
-        virtual CompilationInfo getCompilationInfo() = 0;
+    public:
+        virtual ShaderModuleDescriptor getDesc() = 0;
     };
 
     // ===========================================================================================================================
@@ -1349,8 +1323,8 @@ namespace RHI {
 		virtual std::shared_ptr<BindGroupLayout> createBindGroupLayout(BindGroupLayoutDescriptor desc) = 0;
         virtual std::shared_ptr<BindGroup> createBindGroup(BindGroupDescriptor desc) = 0;
 		virtual std::shared_ptr<PipelineLayout> createPipelineLayout(PipelineLayoutDescriptor desc) = 0;
+		virtual std::shared_ptr<ShaderModule> createShaderModule(ShaderModuleDescriptor desc) = 0;
 
-		ShaderModule createShaderModule(ShaderModuleDescriptor desc);
 		ComputePipeline createComputePipeline(ComputePipelineDescriptor desc);
 		RenderPipeline createRenderPipeline(RenderPipelineDescriptor desc);
 		ComputePipeline createComputePipelineAsync(ComputePipelineDescriptor desc);
