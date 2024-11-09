@@ -727,11 +727,6 @@ namespace RHI {
     // Pipeline
     // ===========================================================================================================================
 
-    enum class  PipelineErrorReason : Uint8 {
-        eValidation,
-        eInternal
-    };
-
     enum class VertexStepMode : Uint8 {
         eVertex,
         eInstance
@@ -844,11 +839,6 @@ namespace RHI {
         eBLUE  = 0x4,
         eALPHA = 0x8,
         eALL   = 0xF
-    };
-
-    struct PipelineError {
-        PipelineErrorReason reason;
-        const char* message;
     };
 
     struct ProgrammableStage {
