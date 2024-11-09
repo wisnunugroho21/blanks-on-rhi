@@ -843,8 +843,6 @@ namespace RHI {
 
     struct ProgrammableStage {
         ShaderModule* module;
-        const char* entryPoint;
-        std::map<const char*, Float64> constants;
     };
 
     struct VertexAttribute {
@@ -948,11 +946,12 @@ namespace RHI {
     };
 
     class PipelineBase {
-        virtual BindGroupLayout getBindGroupLayout(uint32_t index) = 0;
+        virtual BindGroupLayout* getBindGroupLayout(Uint32 index) = 0;
     };
 
     class ComputePipeline : PipelineBase {
-        ComputePipelineDescriptor desc;
+    public:
+        virtual ComputePipelineDescriptor getDesc() = 0;
     };
 
     class RenderPipeline : PipelineBase {
@@ -1338,8 +1337,8 @@ namespace RHI {
         virtual std::shared_ptr<BindGroup> createBindGroup(BindGroupDescriptor desc) = 0;
 		virtual std::shared_ptr<PipelineLayout> createPipelineLayout(PipelineLayoutDescriptor desc) = 0;
 		virtual std::shared_ptr<ShaderModule> createShaderModule(ShaderModuleDescriptor desc) = 0;
+		virtual std::shared_ptr<ComputePipeline> createComputePipeline(ComputePipelineDescriptor desc) = 0;
 
-		ComputePipeline createComputePipeline(ComputePipelineDescriptor desc);
 		RenderPipeline createRenderPipeline(RenderPipelineDescriptor desc);
 		ComputePipeline createComputePipelineAsync(ComputePipelineDescriptor desc);
 		RenderPipeline createRenderPipelineAsync(RenderPipelineDescriptor desc);

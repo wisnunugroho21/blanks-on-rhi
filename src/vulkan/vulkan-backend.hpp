@@ -44,6 +44,7 @@ namespace RHI {
         std::shared_ptr<BindGroup> createBindGroup(BindGroupDescriptor desc) override;
         std::shared_ptr<PipelineLayout> createPipelineLayout(PipelineLayoutDescriptor desc) override;
         std::shared_ptr<ShaderModule> createShaderModule(ShaderModuleDescriptor desc) override;
+        std::shared_ptr<ComputePipeline> createComputePipeline(ComputePipelineDescriptor desc) override;
         
     private:
         VkInstance instance;
@@ -250,6 +251,10 @@ namespace RHI {
 
         }
 
+        BindGroupDescriptor getDesc() override { this->desc; }
+
+        VkDescriptorSet getNative() { return this->descSet; }
+
     protected:
         BindGroupDescriptor desc;
 
@@ -302,12 +307,46 @@ namespace RHI {
 
         ~VulkanShaderModule();
 
+        ShaderModuleDescriptor getDesc() override { return this->desc; }
+
+        VkShaderModule getNative() { return this->shaderModule; }
+
     protected:
         ShaderModuleDescriptor desc;
 
     private:
         VulkanDevice* device;
         VkShaderModule shaderModule;
+    };
+
+    class VulkanComputePipeline : public ComputePipeline {
+    public:
+        VulkanComputePipeline(
+            ComputePipelineDescriptor desc,
+            VulkanDevice* d,
+            VkPipeline p
+        )
+        : desc{desc},
+          device{d},
+          pipeline{p}
+        {
+
+        }
+
+        ~VulkanComputePipeline();
+
+        ComputePipelineDescriptor getDesc() override { return this->desc; }
+
+        BindGroupLayout* getBindGroupLayout(Uint32 index) override;
+
+        VkPipeline getNative() { return this->pipeline; }
+
+    protected:
+        ComputePipelineDescriptor desc;
+
+    private:
+        VulkanDevice* device;
+        VkPipeline pipeline;
     };
 
     class VulkanQueue : public Queue {
