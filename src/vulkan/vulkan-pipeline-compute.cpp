@@ -1,7 +1,5 @@
 #include "vulkan-backend.hpp"
 
-#include <utility>
-
 namespace RHI {
     std::shared_ptr<ComputePipeline> VulkanDevice::createComputePipeline(ComputePipelineDescriptor desc) {
         VkPipeline computePipeline;
