@@ -499,7 +499,7 @@ namespace RHI {
     struct BindGroupLayoutDescriptor {
         std::vector<BindGroupLayoutEntry> entries;
 
-        constexpr BindGroupLayoutDescriptor& setEntries(std::vector<BindGroupLayoutEntry> value) { this->entries = entries; return *this; }
+        constexpr BindGroupLayoutDescriptor& setEntries(const std::vector<BindGroupLayoutEntry>& value) { this->entries = entries; return *this; }
 
         constexpr BindGroupLayoutDescriptor& addEntry(BindGroupLayoutEntry item) { this->entries.emplace_back(item); return *this; }
         constexpr BindGroupLayoutDescriptor& addEntry(Uint32 binding, ShaderStageFlags shaderStage, BindingType type, Uint32 bindCount = 1) { 
@@ -551,9 +551,9 @@ namespace RHI {
     struct BufferBindGroupEntry : BindGroupEntry {
         std::vector<BufferBindGroupItem> groupItems;
 
-        constexpr BindGroupEntry& setBinding(Uint32 value) override { this->binding = value; return *this; }
+        BindGroupEntry& setBinding(Uint32 value) override { this->binding = value; return *this; }
 
-        constexpr BufferBindGroupEntry& setEntries(std::vector<BufferBindGroupItem> value) { this->groupItems = value; return *this; }
+        constexpr BufferBindGroupEntry& setEntries(const std::vector<BufferBindGroupItem>& value) { this->groupItems = value; return *this; }
 
         constexpr BufferBindGroupEntry& addEntry(BufferBindGroupItem item) { this->groupItems.emplace_back(item); return *this; }
 
@@ -574,7 +574,7 @@ namespace RHI {
 
         BindGroupEntry& setBinding(Uint32 value) override { this->binding = value; return *this; }
 
-       constexpr TextureBindGroupEntry& setEntries(std::vector<TextureBindGroupItem> value) { this->groupItems = value; return *this; }
+       constexpr TextureBindGroupEntry& setEntries(const std::vector<TextureBindGroupItem>& value) { this->groupItems = value; return *this; }
        
        constexpr TextureBindGroupEntry& addEntry(TextureBindGroupItem item) { this->groupItems.emplace_back(item); return *this; }
 
@@ -593,7 +593,7 @@ namespace RHI {
 
         BindGroupEntry& setBinding(Uint32 value) override { this->binding = value; return *this; }
 
-        constexpr SamplerBindGroupEntry& setEntries(std::vector<SamplerBindGroupItem> value) { this->groupItems = value; return *this; }
+        constexpr SamplerBindGroupEntry& setEntries(const std::vector<SamplerBindGroupItem>& value) { this->groupItems = value; return *this; }
        
         constexpr SamplerBindGroupEntry& addEntry(SamplerBindGroupItem item) { this->groupItems.emplace_back(item); return *this; }
 
@@ -622,7 +622,7 @@ namespace RHI {
             return *this;
         }
 
-        constexpr BindGroupDescriptor& addBuffer(Uint32 binding, std::vector<BufferBindGroupItem> entries) {
+        constexpr BindGroupDescriptor& addBuffer(Uint32 binding, const std::vector<BufferBindGroupItem>& entries) {
             BufferBindGroupEntry* groupEntry = new BufferBindGroupEntry();
             groupEntry->setBinding(binding);
             groupEntry->setEntries(entries);
@@ -640,7 +640,7 @@ namespace RHI {
             return *this;
         }
 
-        constexpr BindGroupDescriptor& addTextureView(Uint32 binding, std::vector<TextureBindGroupItem> entries) {
+        constexpr BindGroupDescriptor& addTextureView(Uint32 binding, const std::vector<TextureBindGroupItem>& entries) {
             TextureBindGroupEntry* groupEntry = new TextureBindGroupEntry();
             groupEntry->setBinding(binding);
             groupEntry->setEntries(entries);
@@ -658,7 +658,7 @@ namespace RHI {
             return *this;
         }
 
-        constexpr BindGroupDescriptor& addSampler(Uint32 binding, std::vector<SamplerBindGroupItem> entries) {
+        constexpr BindGroupDescriptor& addSampler(Uint32 binding, const std::vector<SamplerBindGroupItem>& entries) {
             SamplerBindGroupEntry* groupEntry = new SamplerBindGroupEntry();
             groupEntry->setBinding(binding);
             groupEntry->setEntries(entries);
@@ -668,11 +668,35 @@ namespace RHI {
         }
     };
 
+    struct ConstantLayout {
+        ShaderStageFlags shaderStage;
+        Uint64 size = ULLONG_MAX;
+        Uint64 offset = 0;
+
+        constexpr ConstantLayout& setShaderStage(ShaderStageFlags value) { this->shaderStage = value; return *this; }
+        constexpr ConstantLayout& setSize(Uint64 value) { this->size = value; return *this; }
+        constexpr ConstantLayout& setOffset(Uint64 value) { this->offset = value; return *this; }
+    };
+
     struct PipelineLayoutDescriptor {
         std::vector<BindGroupLayout*> bindGroupLayouts;
+        std::vector<ConstantLayout> constantLayouts;
 
-        constexpr PipelineLayoutDescriptor& addLayout(BindGroupLayout* layout) {
-            bindGroupLayouts.emplace_back(layout);
+        constexpr PipelineLayoutDescriptor& setBindGroups(const std::vector<BindGroupLayout*>& value) { this->bindGroupLayouts = value; return *this; }
+        constexpr PipelineLayoutDescriptor& setConstants(const std::vector<ConstantLayout>& value) { this->constantLayouts = value; return *this; }
+
+        constexpr PipelineLayoutDescriptor& addBindGroup(BindGroupLayout* item) { this->bindGroupLayouts.emplace_back(item); return *this; }
+        constexpr PipelineLayoutDescriptor& addConstant(ConstantLayout item) { this->constantLayouts.emplace_back(item); return *this; }
+
+        constexpr PipelineLayoutDescriptor& addConstant(ShaderStageFlags shaderStage, Uint64 size, Uint64 offset) {
+            this->constantLayouts.emplace_back(
+                ConstantLayout()
+                    .setShaderStage(shaderStage)
+                    .setSize(size)
+                    .setOffset(offset)
+            );
+
+            return *this;
         }
     };
 
