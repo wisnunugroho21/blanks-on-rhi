@@ -45,6 +45,7 @@ namespace RHI {
         std::shared_ptr<PipelineLayout> createPipelineLayout(PipelineLayoutDescriptor desc) override;
         std::shared_ptr<ShaderModule> createShaderModule(ShaderModuleDescriptor desc) override;
         std::shared_ptr<ComputePipeline> createComputePipeline(ComputePipelineDescriptor desc) override;
+        std::shared_ptr<RenderPipeline> createRenderPipeline(RenderPipelineDescriptor desc) override;
         
     private:
         VkInstance instance;
@@ -162,6 +163,8 @@ namespace RHI {
 
         TextureViewDescriptor getDesc() override { return this->desc; }
 
+        Texture* getTexture() override { return this->texture; }
+
         VkImageView getNative() { return this->imageView; }
 
     protected:
@@ -251,7 +254,7 @@ namespace RHI {
 
         }
 
-        BindGroupDescriptor getDesc() override { this->desc; }
+        BindGroupDescriptor getDesc() override { return this->desc; }
 
         VkDescriptorSet getNative() { return this->descSet; }
 
@@ -349,6 +352,36 @@ namespace RHI {
         VkPipeline pipeline;
     };
 
+    class VulkanRenderPipeline : public RenderPipeline {
+    public:
+        VulkanRenderPipeline(
+            RenderPipelineDescriptor desc,
+            VulkanDevice* d,
+            VkPipeline p
+        )
+        : desc{desc},
+          device{d},
+          pipeline{p}
+        {
+
+        }
+
+        ~VulkanRenderPipeline();
+
+        RenderPipelineDescriptor getDesc() override { return this->desc; }
+
+        BindGroupLayout* getBindGroupLayout(Uint32 index) override;
+
+        VkPipeline getNative() { return this->pipeline; }
+
+    protected:
+        RenderPipelineDescriptor desc;
+
+    private:
+        VulkanDevice* device;
+        VkPipeline pipeline;
+    };
+
     class VulkanQueue : public Queue {
     public:
         VulkanQueue(
@@ -368,4 +401,78 @@ namespace RHI {
     class VulkanFactory {
         static std::shared_ptr<Device> createDevice(DeviceDescriptor desc);
     };
+
+    VkRect2D convertRect2DIntoVulkan(Rect2D rect);
+
+    VkBufferUsageFlags convertBufferUsageIntoVulkan(BufferUsageFlags usage);
+
+    VmaMemoryUsage convertBufferLocationIntoVulkan(BufferLocation location);
+
+    VmaAllocationCreateFlags convertToAllocationFlag(BufferUsageFlags usage, BufferLocation location);
+
+    VkFormat convertTextureFormatIntoVulkan(TextureFormat format);
+
+    VkImageType convertDimensionIntoVulkan(TextureDimension dimension);
+
+    VkSampleCountFlagBits convertSampleCountIntoVulkan(Uint32 sampleCount);
+
+    VkImageUsageFlags convertImageUsageIntoVulkan(TextureUsageFlags usage);
+
+    VkImageLayout convertTextureStateIntoVulkan(TextureState state);
+
+    VkImageViewType convertTextureViewDimensionIntoVulkan(TextureViewDimension viewDimension);
+
+    VkImageAspectFlags convertAspectIntoVulkan(TextureAspect aspect);
+
+    VkSamplerAddressMode convertAddressModeToVulkan(AddressMode addressMode);
+
+    VkFilter convertFilterToVulkan(FilterMode filterMode);
+
+    VkSamplerMipmapMode convertMipmapFilterToVulkan(MipmapFilterMode mipmapFilterMode);
+
+    VkCompareOp convertCompareOpToVulkan(CompareFunction compareFunc);
+
+    VkBorderColor convertBorderColorToVulkan(BorderColor borderColor);
+
+    VkDescriptorType convertBindTypeIntoVulkan(BindingType type);
+
+    VkShaderStageFlags convertShaderStageIntoVulkan(ShaderStageFlags stage);
+
+    VkViewport convertViewportIntoVulkan(Viewport viewport);
+
+    VkVertexInputRate convertVertexStepModeIntoVulkan(VertexStepMode stepMode);
+
+    VkFormat convertVertexFormatIntoVulkan(VertexFormat format);
+
+    VkPrimitiveTopology convertPrimitiveTopologyIntoVulkan(PrimitiveTopology topology);
+
+    VkFrontFace convertFrontFaceIntoVulkan(FrontFace frontFace);
+
+    VkCullModeFlagBits convertCullModeIntoVulkan(CullMode mode);
+
+    VkPolygonMode convertPolygonModeIntoVulkan(PolygonMode mode);
+
+    VkVertexInputRate convertVertexStepModeIntoVulkan(VertexStepMode stepMode);
+
+    VkFormat convertVertexFormatIntoVulkan(VertexFormat format);
+
+    VkPrimitiveTopology convertPrimitiveTopologyIntoVulkan(PrimitiveTopology topology);
+
+    VkFrontFace convertFrontFaceIntoVulkan(FrontFace frontFace);
+
+    VkCullModeFlagBits convertCullModeIntoVulkan(CullMode mode);
+
+    VkPolygonMode convertPolygonModeIntoVulkan(PolygonMode mode);
+
+    VkStencilOp convertStencilOpIntoVulkan(StencilOperation stencilOp);
+
+    VkLogicOp convertLogicOpIntoVulkan(LogicOp logicOp);
+
+    VkBlendOp convertBlendOperationIntoVulkan(BlendOperation blendOp);
+
+    VkBlendFactor convertBlendFactorIntoVulkan(BlendFactor blendFactor);
+
+    VkColorComponentFlags convertColorComponentIntoVulkan(ColorWriteFlags colorWrite);
+
+    std::vector<VkDynamicState> convertDynamicStatesIntoVulkan(DynamicStateEnabledState enabledState);
 }

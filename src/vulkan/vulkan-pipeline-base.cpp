@@ -3,40 +3,6 @@
 #include <utility>
 
 namespace RHI {
-    VkShaderStageFlags convertShaderStageIntoVulkan(ShaderStageFlags stage) {
-        VkShaderStageFlags shaderStages = 0;
-
-        if (stage & std::to_underlying(ShaderStage::eCompute)) {
-            shaderStages |= VK_SHADER_STAGE_COMPUTE_BIT;
-        }
-
-        if (stage & std::to_underlying(ShaderStage::eVertex)) {
-            shaderStages |= VK_SHADER_STAGE_VERTEX_BIT;
-        }
-
-        if (stage & std::to_underlying(ShaderStage::eFragment)) {
-            shaderStages |= VK_SHADER_STAGE_FRAGMENT_BIT;
-        }
-
-        if (stage & std::to_underlying(ShaderStage::eTessellCtrl)) {
-            shaderStages |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-        }
-
-        if (stage & std::to_underlying(ShaderStage::eTessellEval)) {
-            shaderStages |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-        }
-
-        if (stage & std::to_underlying(ShaderStage::eTask)) {
-            shaderStages |= VK_SHADER_STAGE_TASK_BIT_EXT;
-        }
-
-        if (stage & std::to_underlying(ShaderStage::eMesh)) {
-            shaderStages |= VK_SHADER_STAGE_MESH_BIT_EXT;
-        }
-
-        return shaderStages;
-    }
-
     std::shared_ptr<PipelineLayout> VulkanDevice::createPipelineLayout(PipelineLayoutDescriptor desc) {
         VkPipelineLayout pipelineLayout;
 

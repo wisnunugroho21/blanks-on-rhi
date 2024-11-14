@@ -104,6 +104,18 @@ namespace RHI {
 		constexpr Extent3D& setDepth(Uint32 value) { this->depth = value; return *this; }
     };
 
+    struct Rect2D {
+        Int32 x;
+        Int32 y;
+        Uint32 width;
+        Uint32 height;
+
+        constexpr Rect2D& setX(Int32 value) { this->x = value; return *this; }
+        constexpr Rect2D& setY(Int32 value) { this->y = value; return *this; }
+        constexpr Rect2D& setWidth(Uint32 value) { this->width = value; return *this; }
+        constexpr Rect2D& setHeight(Uint32 value) { this->height = value; return *this; }
+    };
+
     // ===========================================================================================================================
     // Buffer
     // ===========================================================================================================================
@@ -499,7 +511,7 @@ namespace RHI {
     struct BindGroupLayoutDescriptor {
         std::vector<BindGroupLayoutEntry> entries;
 
-        constexpr BindGroupLayoutDescriptor& setEntries(const std::vector<BindGroupLayoutEntry>& value) { this->entries = entries; return *this; }
+        constexpr BindGroupLayoutDescriptor& setEntries(const std::vector<BindGroupLayoutEntry>& value) { this->entries = value; return *this; }
 
         constexpr BindGroupLayoutDescriptor& addEntry(BindGroupLayoutEntry item) { this->entries.emplace_back(item); return *this; }
         constexpr BindGroupLayoutDescriptor& addEntry(Uint32 binding, ShaderStageFlags shaderStage, BindingType type, Uint32 bindCount = 1) { 
@@ -753,17 +765,13 @@ namespace RHI {
         eFloat16x4,
         eFloat32,
         eFloat32x2,
-        eFloat32x3,
         eFloat32x4,
         eUint32,
         eUint32x2,
-        eUint32x3,
         eUint32x4,
         eSint32,
         eSint32x2,
-        eSint32x3,
-        eSint32x4,
-        eUnorm1010102
+        eSint32x4
     };
 
     enum class PrimitiveTopology : Uint8 {
@@ -787,7 +795,8 @@ namespace RHI {
     enum class CullMode : Uint8 {
         eNone,
         eFront,
-        eBack
+        eBack,
+        eAll
     };
 
     enum class PolygonMode : Uint8 {
@@ -834,11 +843,30 @@ namespace RHI {
     };
 
     enum class ColorWrite : FlagsConstant {
-        eRED   = 0x1,
-        eGREEN = 0x2,
-        eBLUE  = 0x4,
-        eALPHA = 0x8,
-        eALL   = 0xF
+        eRed   = 0x1,
+        eGreen = 0x2,
+        eBlue  = 0x4,
+        eAlpha = 0x8,
+        eAll   = 0xF
+    };
+
+    enum class LogicOp : Uint8 {
+        eCopy,
+        eKeep,
+        eClear,
+        eAnd,
+        eAndReverse,
+        eAndInverted,
+        eXor,
+        eOr,
+        eNor,
+        eEquivalent,
+        eInvert,
+        eOrReverse,
+        eCopyInverted,
+        eOrInverted,
+        eNand,
+        eSet
     };
 
     struct ProgrammableStage {
@@ -851,6 +879,21 @@ namespace RHI {
         Uint32 shaderLocation;
     };
 
+    struct Viewport {
+        float x;
+        float y;
+        float width;
+        float height;
+        float minDepth;
+        float maxDepth;
+    };
+
+    struct DepthBias {
+        float constant = 0.0f;
+        float slopeScale = 0.0f;
+        float clamp = 0.0f;
+    };
+
     struct BlendComponent {
         BlendOperation operation = BlendOperation::eAdd;
         BlendFactor srcFactor = BlendFactor::eOne;
@@ -858,15 +901,16 @@ namespace RHI {
     };
 
     struct BlendState {
-        BlendComponent color;
-        BlendComponent alpha;
+        bool blendEnabled = false;
+        BlendComponent color{};
+        BlendComponent alpha{};
     };
 
     struct ColorTargetState {
         TextureFormat format;
-
-        BlendState blend;
-        ColorWriteFlags writeMask = 0xF;  // ColorWrite.ALL
+        
+        BlendState blend{};
+        ColorWriteFlags colorWriteMask = 0xF;  // ColorWrite.ALL
     };
 
     struct VertexBufferLayout {
@@ -884,47 +928,77 @@ namespace RHI {
         IndexFormat stripIndexFormat = IndexFormat::eUint32;
     };
 
+    struct ViewportScissorState {
+        std::vector<Viewport> viewports;
+        std::vector<Rect2D> scissors;
+    };
+
     struct RasterizationState {
         FrontFace frontFace = FrontFace::eCCW;
         CullMode cullMode = CullMode::eNone;
         PolygonMode polygonMode = PolygonMode::eFill;
+        float lineWidth = 1.0f;
 
-        // Requires "depth-clip-control" feature.
-        bool unclippedDepth = false;
+        DepthBias depthBias{};
+        bool unclippedDepth = false; // Requires "depth-clip-control" feature.
+    };
+
+    struct DepthState {
+        TextureFormat format;
+
+        bool depthTestEnabled;
+        bool depthWriteEnabled;
+        CompareFunction depthCompareOp;
+
+        bool depthBoundsTestEnabled;
+        float minDepthBounds;
+        float maxDepthBounds;
     };
 
     struct StencilFaceState {
-        CompareFunction compare = CompareFunction::eAlways;
+        CompareFunction compareOp = CompareFunction::eAlways;
         StencilOperation failOp = StencilOperation::eKeep;
         StencilOperation depthFailOp = StencilOperation::eKeep;
         StencilOperation passOp = StencilOperation::eKeep;
     };
 
-    struct DepthStencilState {
+    struct StencilState {
         TextureFormat format;
-
-        bool depthWriteEnabled;
-        CompareFunction depthCompare;
+        bool stencilTestEnabled;
 
         StencilFaceState stencilFront{};
         StencilFaceState stencilBack{};
 
-        Uint64 stencilReadMask = 0xFFFFFFFF;
-        Uint64 stencilWriteMask = 0xFFFFFFFF;
-
-        Int64 depthBias = 0;
-        float depthBiasSlopeScale = 0;
-        float depthBiasClamp = 0;
+        Uint32 stencilCompareMask = 0xFFFFFFFF;
+        Uint32 stencilWriteMask = 0xFFFFFFFF;
+        Uint32 stencilRefence = 0xFFFFFFFF;
     };
 
     struct MultisampleState {
         Uint32 count = 1;
         Uint32 mask = 0xFFFFFFFF;
+
         bool alphaToCoverageEnabled = false;
+        bool alphaToOneEnabled = false;
     };
 
     struct FragmentState : ProgrammableStage {
         std::vector<ColorTargetState> targets;
+        
+        LogicOp logicOp = LogicOp::eCopy;
+        Color blendConstant{};
+    };
+
+    struct DynamicStateEnabledState {
+        bool viewport = false;
+        bool scissorRect = false;
+        bool lineWidth = false;
+        bool depthBias = false;
+        bool blendConstants = false;
+        bool depthBounds = false;
+        bool stencilCompareMask = false;
+        bool stencilWriteMask = false;
+        bool stencilReference = false;
     };
 
     struct PipelineDescriptorBase {
@@ -938,11 +1012,14 @@ namespace RHI {
     struct RenderPipelineDescriptor : PipelineDescriptorBase {
         VertexState vertex;
         FragmentState fragment;
-        DepthStencilState depthStencil;
+        DepthState depth;
+        StencilState stencil;
+        ViewportScissorState viewportScissor;
 
         PrimitiveState primitive{};
         RasterizationState rasterizationState{};
         MultisampleState multisample{};
+        DynamicStateEnabledState dynamicState{};
     };
 
     class PipelineBase {
@@ -955,7 +1032,8 @@ namespace RHI {
     };
 
     class RenderPipeline : PipelineBase {
-        RenderPipelineDescriptor desc;
+    public:
+        virtual RenderPipelineDescriptor getDesc() = 0;
 
         bool writesDepth;
         bool writesStencil;
@@ -1184,7 +1262,7 @@ namespace RHI {
     };
 
     class RenderCommandsMixin {
-        virtual void setPipeline(RenderPipeline pipeline) = 0;
+        virtual void setPipeline(RenderPipeline* pipeline) = 0;
 
         virtual void setIndexBuffer(Buffer* buffer, IndexFormat indexFormat, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
         virtual void setVertexBuffer(Uint32 slot, Buffer* buffer, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
@@ -1211,14 +1289,26 @@ namespace RHI {
         RenderPassDescriptor desc;
         CommandEncoder* commandEncoder;
 
-        virtual void setViewport(float x, float y,
-                                float width, float height,
-                                float minDepth, float maxDepth) = 0;
+        virtual void setViewport(float x, float y, float width, float height, float minDepth, float maxDepth) = 0;
+        virtual void setViewport(Viewport viewport) = 0;
 
-        virtual void setScissorRect(Uint32 x, Uint32 y,
-                                    Uint32 width, Uint32 height) = 0;
+        virtual void setScissorRect(Uint32 x, Uint32 y, Uint32 width, Uint32 height) = 0;
+        virtual void setScissorRect(Rect2D rect) = 0;
+
+        virtual void setLineWidth(float lineWidth) = 0;
+
+        virtual void setDepthBias(float constant, float clamp, float slopeScale) = 0;
+        virtual void setDepthBias(DepthBias depthBias) = 0;
 
         virtual void setBlendConstant(Color color) = 0;
+        virtual void setBlendConstant(float r, float g, float b, float a) = 0;
+
+        virtual void setDepthBounds(float min, float max) = 0;
+
+        virtual void setStencilCompareMask(Uint32 compareMask) = 0;
+
+        virtual void setStencilWriteMask(Uint32 writeMask) = 0;
+
         virtual void setStencilReference(Uint32 reference) = 0;
 
         virtual void beginOcclusionQuery(Uint32 queryIndex) = 0;
@@ -1338,10 +1428,7 @@ namespace RHI {
 		virtual std::shared_ptr<PipelineLayout> createPipelineLayout(PipelineLayoutDescriptor desc) = 0;
 		virtual std::shared_ptr<ShaderModule> createShaderModule(ShaderModuleDescriptor desc) = 0;
 		virtual std::shared_ptr<ComputePipeline> createComputePipeline(ComputePipelineDescriptor desc) = 0;
-
-		RenderPipeline createRenderPipeline(RenderPipelineDescriptor desc);
-		ComputePipeline createComputePipelineAsync(ComputePipelineDescriptor desc);
-		RenderPipeline createRenderPipelineAsync(RenderPipelineDescriptor desc);
+		virtual std::shared_ptr<RenderPipeline> createRenderPipeline(RenderPipelineDescriptor desc) = 0;
 
 		CommandEncoder createCommandEncoder();
 

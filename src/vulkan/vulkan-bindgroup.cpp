@@ -3,52 +3,6 @@
 #include <utility>
 
 namespace RHI {
-    VkDescriptorType convertBindTypeIntoVulkan(BindingType type) {
-        switch (type) {
-            case BindingType::eUniformBuffer : return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            case BindingType::eStorageBuffer : return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            case BindingType::eSampledTexture : return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-            case BindingType::eStorageTexture : return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-            case BindingType::eSampler : return VK_DESCRIPTOR_TYPE_SAMPLER;
-            
-            default: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        }
-    }
-
-    VkShaderStageFlags convertShaderStageIntoVulkan(ShaderStageFlags stage) {
-        VkShaderStageFlags shaderStages = 0;
-
-        if (stage & std::to_underlying(ShaderStage::eCompute)) {
-            shaderStages |= VK_SHADER_STAGE_COMPUTE_BIT;
-        }
-
-        if (stage & std::to_underlying(ShaderStage::eVertex)) {
-            shaderStages |= VK_SHADER_STAGE_VERTEX_BIT;
-        }
-
-        if (stage & std::to_underlying(ShaderStage::eFragment)) {
-            shaderStages |= VK_SHADER_STAGE_FRAGMENT_BIT;
-        }
-
-        if (stage & std::to_underlying(ShaderStage::eTessellCtrl)) {
-            shaderStages |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-        }
-
-        if (stage & std::to_underlying(ShaderStage::eTessellEval)) {
-            shaderStages |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-        }
-
-        if (stage & std::to_underlying(ShaderStage::eTask)) {
-            shaderStages |= VK_SHADER_STAGE_TASK_BIT_EXT;
-        }
-
-        if (stage & std::to_underlying(ShaderStage::eMesh)) {
-            shaderStages |= VK_SHADER_STAGE_MESH_BIT_EXT;
-        }
-
-        return shaderStages;
-    }
-
     std::shared_ptr<BindGroupLayout> VulkanDevice::createBindGroupLayout(BindGroupLayoutDescriptor desc) {
         VkDescriptorSetLayout descSetLayout;
         std::vector<VkDescriptorSetLayoutBinding> bindLayouts;
@@ -173,6 +127,6 @@ namespace RHI {
         vkUpdateDescriptorSets(this->device, static_cast<Uint32>(writeDescSets.size()), 
             writeDescSets.data(), 0, nullptr);
 
-        return std::make_shared<BindGroup>(desc, this, descSet);
+        return std::make_shared<VulkanBindGroup>(desc, this, descSet);
     }
 }
