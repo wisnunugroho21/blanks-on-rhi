@@ -337,7 +337,7 @@ namespace RHI {
                 .setIndex(i);
 
             std::shared_ptr<Queue> a = std::make_shared<VulkanQueue>(desc, vulkanQueue);
-            queues->push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue));
+            queues->push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue, familyIndices.graphicsFamily));
         }
 
         for (uint32_t i = 0; i < familyIndices.computeCount; i++) {
@@ -348,7 +348,7 @@ namespace RHI {
                 .setType(QueueType::Compute)
                 .setIndex(i);
 
-            queues->push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue));
+            queues->push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue, familyIndices.computeFamily));
         }
 
         for (uint32_t i = 0; i < familyIndices.transferCount; i++) {
@@ -359,7 +359,7 @@ namespace RHI {
                 .setType(QueueType::Transfer)
                 .setIndex(i);
 
-            queues->push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue));
+            queues->push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue, familyIndices.transferFamily));
         }
     }
 

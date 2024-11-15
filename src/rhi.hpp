@@ -56,6 +56,7 @@ namespace RHI {
     typedef unsigned long BufferUsageFlags;
     typedef unsigned long ShaderStageFlags;
     typedef unsigned long ColorWriteFlags;
+    typedef unsigned long ResolveModeFlags;
 
     struct Color {
         float r;
@@ -327,7 +328,8 @@ namespace RHI {
     enum class TextureState : Uint8 {
         eUndefined,
         eColorAttachment,
-        eDepthStencilAttachment,
+        eDepthAttachment,
+        eStencilAttachment,
         eColorTextureBinding,
         eDepthStencilTextureBinding,
         eStorageBinding,
@@ -1026,12 +1028,12 @@ namespace RHI {
         virtual BindGroupLayout* getBindGroupLayout(Uint32 index) = 0;
     };
 
-    class ComputePipeline : PipelineBase {
+    class ComputePipeline : public PipelineBase {
     public:
         virtual ComputePipelineDescriptor getDesc() = 0;
     };
 
-    class RenderPipeline : PipelineBase {
+    class RenderPipeline : public PipelineBase {
     public:
         virtual RenderPipelineDescriptor getDesc() = 0;
 
@@ -1131,16 +1133,16 @@ namespace RHI {
     // ===========================================================================================================================
 
     enum class CommandState : Uint8 {
-        Open,
-        Locked,
-        Ended
+        eOpen,
+        eLocked,
+        eEnded
     };
 
     class CommandsMixin {
         CommandState state;
     };
 
-    class CommandEncoder : CommandsMixin, BarrierCommandsMixin {
+    class CommandEncoder : public CommandsMixin, public BarrierCommandsMixin {
         virtual std::shared_ptr<RenderPassEncoder> beginRenderPass(RenderPassDescriptor desc) = 0;
         virtual std::shared_ptr<ComputePassEncoder> beginComputePass(ComputePassDescriptor desc) = 0;
 
@@ -1207,7 +1209,7 @@ namespace RHI {
         ComputePassTimestampWrites timestampWrites;
     };
 
-    class ComputePassEncoder : CommandsMixin, BindingCommandsMixin {
+    class ComputePassEncoder : public CommandsMixin, public BindingCommandsMixin {
         ComputePassDescriptor desc;
         CommandEncoder* commandEncoder;
 
@@ -1223,36 +1225,49 @@ namespace RHI {
     // ===========================================================================================================================
 
     enum class LoadOp : Uint8 {
-        Load,
-        Clear
+        eLoad,
+        eClear
     };
 
-    enum StoreOp : Uint8 {
-        Store,
-        Discard
+    enum class StoreOp : Uint8 {
+        eStore,
+        eDiscard
+    };
+
+    enum class ResolveMode : FlagsConstant {
+        eAverage    = 0x0001,
+        eMin        = 0x0002,
+        eMax        = 0x0004
     };
 
     struct RenderPassColorAttachment {
-        TextureView* view;
-        TextureView* resolveTarget;
+        TextureView* targetView;
+        TextureView* resolveTargetView;
+        ResolveMode resolveMode;
 
         Color clearValue;
         LoadOp loadOp;
         StoreOp storeOp;
     };
 
-    struct RenderPassDepthStencilAttachment {
-        TextureView* view;
+    struct RenderPassDepthAttachment {
+        TextureView* targetView;
 
-        float depthClearValue;
-        LoadOp depthLoadOp;
-        StoreOp depthStoreOp;
-        bool depthReadOnly = false;
+        float clearValue;
+        LoadOp loadOp;
+        StoreOp storeOp;
 
-        Uint32 stencilClearValue = 0;
-        LoadOp stencilLoadOp;
-        StoreOp stencilStoreOp;
-        bool stencilReadOnly = false;
+        bool readOnly = false;
+    };
+
+    struct RenderPassStencilAttachment {
+        TextureView* targetView;
+
+        Uint32 clearValue;
+        LoadOp loadOp;
+        StoreOp storeOp;
+
+        bool readOnly = false;
     };
 
     struct RenderPassTimestampWrites {
@@ -1267,10 +1282,8 @@ namespace RHI {
         virtual void setIndexBuffer(Buffer* buffer, IndexFormat indexFormat, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
         virtual void setVertexBuffer(Uint32 slot, Buffer* buffer, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
 
-        virtual void draw(Uint32 vertexCount, Uint32 instanceCount = 1, 
-            Uint32 firstVertex = 0, Uint32 firstInstance = 0) = 0;
-        virtual void drawIndexed(Uint32 indexCount, Uint32 instanceCount = 1,
-            Uint32 firstIndex = 0, Int32 baseVertex = 0,
+        virtual void draw(Uint32 vertexCount, Uint32 instanceCount = 1,  Uint32 firstVertex = 0, Uint32 firstInstance = 0) = 0;
+        virtual void drawIndexed(Uint32 indexCount, Uint32 instanceCount = 1, Uint32 firstIndex = 0, Int32 baseVertex = 0, 
             Uint32 firstInstance = 0) = 0;
 
         virtual void drawIndirect(Buffer* indirectBuffer, Uint64 indirectOffset) = 0;
@@ -1279,21 +1292,27 @@ namespace RHI {
 
     struct RenderPassDescriptor {
         std::vector<RenderPassColorAttachment> colorAttachments;
-        RenderPassDepthStencilAttachment depthStencilAttachment;
+        RenderPassDepthAttachment depthAttachment;
+        RenderPassStencilAttachment stencilAttachment;
+        
         QuerySet* occlusionQuerySet;
         RenderPassTimestampWrites timestampWrites;
+
         Uint64 maxDrawCount = 50000000;
     };
 
-    class RenderPassEncoder : CommandsMixin, BindingCommandsMixin, RenderCommandsMixin {
-        RenderPassDescriptor desc;
-        CommandEncoder* commandEncoder;
+    class RenderPassEncoder : public CommandsMixin, public BindingCommandsMixin, public RenderCommandsMixin {
+    public:
+        virtual RenderPipelineDescriptor getDesc() = 0;
+        virtual CommandEncoder* getCommandEncoder() = 0;
 
         virtual void setViewport(float x, float y, float width, float height, float minDepth, float maxDepth) = 0;
         virtual void setViewport(Viewport viewport) = 0;
+        virtual void setViewport(std::vector<Viewport> viewports) = 0;
 
         virtual void setScissorRect(Uint32 x, Uint32 y, Uint32 width, Uint32 height) = 0;
         virtual void setScissorRect(Rect2D rect) = 0;
+        virtual void setScissorRect(std::vector<Rect2D> rects) = 0;
 
         virtual void setLineWidth(float lineWidth) = 0;
 
@@ -1311,8 +1330,8 @@ namespace RHI {
 
         virtual void setStencilReference(Uint32 reference) = 0;
 
-        virtual void beginOcclusionQuery(Uint32 queryIndex) = 0;
-        virtual void endOcclusionQuery() = 0;
+        // virtual void beginOcclusionQuery(Uint32 queryIndex) = 0;
+        // virtual void endOcclusionQuery() = 0;
 
         virtual void end() = 0;
     };
@@ -1338,12 +1357,8 @@ namespace RHI {
 
     class Queue {
     public:
-        Queue(QueueDescriptor desc) : desc{desc} {}
-
+        virtual QueueDescriptor getDesc() = 0;
         virtual void submit(std::vector<CommandEncoder*> commandBuffers) = 0;
-
-    protected:
-        QueueDescriptor desc;
     }; 
 
     // ===========================================================================================================================

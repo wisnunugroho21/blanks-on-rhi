@@ -244,7 +244,8 @@ namespace RHI {
             case TextureState::eUndefined : return VK_IMAGE_LAYOUT_UNDEFINED;
             case TextureState::eStorageBinding : return VK_IMAGE_LAYOUT_GENERAL;
             case TextureState::eColorAttachment : return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            case TextureState::eDepthStencilAttachment : return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            case TextureState::eDepthAttachment : return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            case TextureState::eStencilAttachment : return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
             case TextureState::eColorTextureBinding : return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             case TextureState::eDepthStencilTextureBinding : return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
             case TextureState::eCopySrc : return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -647,5 +648,33 @@ namespace RHI {
         }
 
         return dynamicStates;
+    }
+
+    VkResolveModeFlagBits convertResolveModeIntoVulkan(ResolveMode resolveMode) {
+        switch (resolveMode) {
+            case ResolveMode::eAverage: return VK_RESOLVE_MODE_AVERAGE_BIT;
+            case ResolveMode::eMax: return VK_RESOLVE_MODE_MAX_BIT;
+            case ResolveMode::eMin: return VK_RESOLVE_MODE_MIN_BIT;
+
+            default: return VK_RESOLVE_MODE_AVERAGE_BIT;
+        }
+    }
+
+    VkAttachmentLoadOp convertLoadOpIntoVulkan(LoadOp loadOp) {
+        switch (loadOp) {
+            case LoadOp::eClear : return VK_ATTACHMENT_LOAD_OP_CLEAR;
+            case LoadOp::eLoad : return VK_ATTACHMENT_LOAD_OP_LOAD;
+            
+            default: return VK_ATTACHMENT_LOAD_OP_CLEAR;
+        }
+    }
+
+    VkAttachmentStoreOp convertStoreOpIntoVulkan(StoreOp storeOp) {
+        switch (storeOp) {
+            case StoreOp::eStore : return VK_ATTACHMENT_STORE_OP_STORE;
+            case StoreOp::eDiscard : return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            
+            default: return VK_ATTACHMENT_STORE_OP_STORE;
+        }
     }
 }

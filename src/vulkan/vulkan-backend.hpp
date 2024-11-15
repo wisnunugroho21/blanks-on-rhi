@@ -57,6 +57,7 @@ namespace RHI {
         VmaAllocator memoryAllocator;
 
         std::vector<std::shared_ptr<Queue>> queues;
+        std::vector<VkCommandPool> commandPools;
         VkDescriptorPool descriptorPool;
     };
 
@@ -382,20 +383,98 @@ namespace RHI {
         VkPipeline pipeline;
     };
 
+    class VulkanRenderPassEncoder : public RenderPassEncoder {
+    public:
+        VulkanRenderPassEncoder(
+            RenderPassDescriptor desc,
+            CommandEncoder* c
+        )
+        : desc{desc},
+          commandEncoder{c}
+        {
+
+        }
+
+        void setViewport(float x, float y, float width, float height, float minDepth, float maxDepth) override;
+        void setViewport(Viewport viewport) override;
+        void setViewport(std::vector<Viewport> viewports) override;
+
+        void setScissorRect(Uint32 x, Uint32 y, Uint32 width, Uint32 height) override;
+        void setScissorRect(Rect2D scissor) override;
+        void setScissorRect(std::vector<Rect2D> scissors) override;
+
+        void setLineWidth(float lineWidth) override;
+
+        void setDepthBias(float constant, float clamp, float slopeScale) override;
+        void setDepthBias(DepthBias depthBias) override;
+        
+        void setBlendConstant(float r, float g, float b, float a) override;
+        void setBlendConstant(Color color) override;
+
+        void setDepthBounds(float min, float max) override;
+
+        void setStencilCompareMask(Uint32 compareMask) override;
+
+        void setStencilWriteMask(Uint32 writeMask) override;
+
+        void setStencilReference(Uint32 reference) override;
+
+        void end() override;
+
+    protected:
+        RenderPassDescriptor desc;
+        CommandEncoder* commandEncoder;
+    };
+
+    class VulkanCommandEncoder : public CommandEncoder {
+    public:
+        VulkanCommandEncoder(
+            VulkanDevice* d,
+            VkCommandBuffer c
+        )
+        : device{d},
+          commandBuffer{c}
+        {
+
+        }
+
+        std::shared_ptr<RenderPassEncoder> beginRenderPass(RenderPassDescriptor desc) override;
+
+        VkCommandBuffer getNative() { return this->commandBuffer; }
+
+    protected:
+        VulkanDevice* device;
+        VkCommandBuffer commandBuffer;
+    };
+
     class VulkanQueue : public Queue {
     public:
         VulkanQueue(
             QueueDescriptor desc,
-            VkQueue q
+            VkQueue q,
+            Uint32 fi
         )
-        : Queue(desc),
-          queue{q}
-        {}
+        : desc{desc},
+          queue{q},
+          familyIndex{fi}
+        {
 
-    void submit(std::vector<CommandEncoder*> commandBuffers) override;
+        }
+
+        QueueDescriptor getDesc() override { return this->desc; }
+
+        void submit(std::vector<CommandEncoder*> commandBuffers) override;
+
+        VkQueue getNative() { return this->queue; }
+
+        Uint32 getFamilyIndex() { return this->familyIndex; }
+
+    protected:
+        QueueDescriptor desc;
 
     private:
         VkQueue queue;
+        Uint32 familyIndex;
     };    
 
     class VulkanFactory {
@@ -475,4 +554,10 @@ namespace RHI {
     VkColorComponentFlags convertColorComponentIntoVulkan(ColorWriteFlags colorWrite);
 
     std::vector<VkDynamicState> convertDynamicStatesIntoVulkan(DynamicStateEnabledState enabledState);
+
+    VkResolveModeFlagBits convertResolveModeIntoVulkan(ResolveMode resolveMode);
+
+    VkAttachmentLoadOp convertLoadOpIntoVulkan(LoadOp loadOp);
+
+    VkAttachmentStoreOp convertStoreOpIntoVulkan(StoreOp storeOp);
 }
