@@ -47,68 +47,75 @@ namespace RHI {
             throw std::runtime_error("Failed to allocate descriptor set!");
         }
 
-        std::vector<VkWriteDescriptorSet> writeDescSets;
-
         std::map<Uint32, BindGroupLayoutEntry> layoutEntries = desc.layout->getDesc().entries;
-        std::vector<VkDescriptorBufferInfo> bufferInfos;
-        std::vector<VkDescriptorImageInfo> imageInfos;
+        std::vector<VkWriteDescriptorSet> writeDescSets;
+        
+        std::vector<std::vector<VkDescriptorBufferInfo>> bufferInfos;
+        std::vector<std::vector<VkDescriptorImageInfo>> imageInfos;
 
-        for (auto &&entry : desc.entries) {
+        for (auto &&entry : layoutEntries) {
             VkWriteDescriptorSet writeDescSet;
 
             writeDescSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             writeDescSet.dstSet = descSet;
-            writeDescSet.dstBinding = entry.second->binding;
+            writeDescSet.dstBinding = entry.second.binding;
             
-            writeDescSet.descriptorType = convertBindTypeIntoVulkan(layoutEntries[entry.first].type);
+            writeDescSet.descriptorType = convertBindTypeIntoVulkan(entry.second.type);
 
-            BufferBindGroupEntry* bufferEntry = dynamic_cast<BufferBindGroupEntry*>(entry.second);
+            if (entry.second.type == BindingType::eUniformBuffer || entry.second.type == BindingType::eStorageBuffer) {
+                BufferBindGroupEntry bufferEntry = desc.bufferEntries[entry.first];
 
-            if (bufferEntry != nullptr) {
-                writeDescSet.descriptorCount = static_cast<Uint32>(bufferEntry->groupItems.size());
-                std::vector<VkDescriptorBufferInfo> bufferInfos { writeDescSet.descriptorCount };
+                writeDescSet.descriptorCount = static_cast<uint32_t>(bufferEntry.groupItems.size());
+                bufferInfos.emplace_back(std::vector<VkDescriptorBufferInfo>{});
 
-                for (size_t i = 0; i < bufferInfos.size(); i++) {
-                    bufferInfos[i].buffer = static_cast<VulkanBuffer*>(bufferEntry->groupItems[i].buffer)->getNative();
-                    bufferInfos[i].range = bufferEntry->groupItems[i].size == ULLONG_MAX ? VK_WHOLE_SIZE : bufferEntry->groupItems[i].size;
-                    bufferInfos[i].offset = bufferEntry->groupItems[i].offset;
+                for (uint32_t i = 0; i < writeDescSet.descriptorCount; i++) {
+                    VkDescriptorBufferInfo bufferInfo{};
+
+                    bufferInfo.buffer = static_cast<VulkanBuffer*>(bufferEntry.groupItems[i].buffer)->getNative();
+                    bufferInfo.range = bufferEntry.groupItems[i].size == ULLONG_MAX ? VK_WHOLE_SIZE : bufferEntry.groupItems[i].size;
+                    bufferInfo.offset = bufferEntry.groupItems[i].offset;
+
+                    bufferInfos[bufferInfos.size() - 1].emplace_back(bufferInfo);
                 }
 
-                writeDescSet.pBufferInfo = bufferInfos.data();
-                continue;
+                writeDescSet.pBufferInfo = bufferInfos[bufferInfos.size() - 1].data();
             }
 
-            TextureBindGroupEntry* textureEntry = dynamic_cast<TextureBindGroupEntry*>(entry.second);
+            else if (entry.second.type == BindingType::eSampledTexture || entry.second.type == BindingType::eStorageTexture) {
+                TextureBindGroupEntry textureEntry = desc.textureEntries[entry.first];
 
-            if (textureEntry != nullptr) {
-                writeDescSet.descriptorCount = static_cast<Uint32>(textureEntry->groupItems.size());
-                std::vector<VkDescriptorImageInfo> imageInfos { writeDescSet.descriptorCount };
+                writeDescSet.descriptorCount = static_cast<Uint32>(textureEntry.groupItems.size());
+                imageInfos.emplace_back(std::vector<VkDescriptorImageInfo>{});
 
-                for (size_t i = 0; i < imageInfos.size(); i++) {
-                    VulkanTextureView* txtView = dynamic_cast<VulkanTextureView*>(textureEntry->groupItems[i].textureView);
+                for (size_t i = 0; i < writeDescSet.descriptorCount; i++) {
+                    VulkanTextureView* txtView = dynamic_cast<VulkanTextureView*>(textureEntry.groupItems[i].textureView);
+                    VkDescriptorImageInfo imageInfo{};
 
-                    imageInfos[i].imageView = txtView->getNative();
-                    imageInfos[i].imageLayout = (txtView->getTexture()->getDesc().usage & std::to_underlying(TextureUsage::eTextureBinding)) 
+                    imageInfo.imageView = txtView->getNative();
+                    imageInfo.imageLayout = (txtView->getTexture()->getDesc().usage & std::to_underlying(TextureUsage::eTextureBinding)) 
                         ? VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
                         : VK_IMAGE_LAYOUT_GENERAL;
+
+                    imageInfos[imageInfos.size() - 1].emplace_back(imageInfo);
                 }
 
-                writeDescSet.pImageInfo = imageInfos.data();
-                continue;
+                writeDescSet.pImageInfo = imageInfos[imageInfos.size() - 1].data();
             }
 
-            SamplerBindGroupEntry* samplerEntry = dynamic_cast<SamplerBindGroupEntry*>(entry.second);
+            else if (entry.second.type == BindingType::eSampler) {
+                SamplerBindGroupEntry samplerEntry = desc.samplerEntries[entry.first];
 
-            if (samplerEntry != nullptr) {
-                writeDescSet.descriptorCount = static_cast<Uint32>(samplerEntry->groupItems.size());
-                std::vector<VkDescriptorImageInfo> imageInfos { writeDescSet.descriptorCount };
+                writeDescSet.descriptorCount = static_cast<Uint32>(samplerEntry.groupItems.size());
+                imageInfos.emplace_back(std::vector<VkDescriptorImageInfo>{});
 
-                for (size_t i = 0; i < imageInfos.size(); i++) {
-                    imageInfos[i].sampler = dynamic_cast<VulkanSampler*>(samplerEntry->groupItems[i].sampler)->getNative();
+                for (size_t i = 0; i < writeDescSet.descriptorCount; i++) {
+                    VkDescriptorImageInfo imageInfo{};
+                    imageInfo.sampler = dynamic_cast<VulkanSampler*>(samplerEntry.groupItems[i].sampler)->getNative();
+
+                    imageInfos[imageInfos.size() - 1].emplace_back(imageInfo);
                 }
 
-                writeDescSet.pImageInfo = imageInfos.data();
-                continue;
+                writeDescSet.pImageInfo = imageInfos[imageInfos.size() - 1].data();
             }
 
             writeDescSets.emplace_back(writeDescSet);
@@ -116,10 +123,6 @@ namespace RHI {
 
         vkUpdateDescriptorSets(this->device, static_cast<Uint32>(writeDescSets.size()), 
             writeDescSets.data(), 0, nullptr);
-
-        for (auto &&entry : desc.entries) {
-            delete entry.second;
-        }
 
         return std::make_shared<VulkanBindGroup>(desc, this, descSet);
     }

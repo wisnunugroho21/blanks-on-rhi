@@ -541,8 +541,6 @@ namespace RHI {
 
     struct BindGroupEntry {
         Uint32 binding;
-
-        virtual BindGroupEntry& setBinding(Uint32 value) = 0;
     };
 
     struct BufferBindGroupItem {
@@ -570,7 +568,7 @@ namespace RHI {
     struct BufferBindGroupEntry : BindGroupEntry {
         std::vector<BufferBindGroupItem> groupItems;
 
-        BindGroupEntry& setBinding(Uint32 value) override { this->binding = value; return *this; }
+        constexpr BufferBindGroupEntry& setBinding(Uint32 value) { this->binding = value; return *this; }
 
         constexpr BufferBindGroupEntry& setEntries(const std::vector<BufferBindGroupItem>& value) { this->groupItems = value; return *this; }
 
@@ -591,11 +589,11 @@ namespace RHI {
     struct TextureBindGroupEntry : BindGroupEntry {
         std::vector<TextureBindGroupItem> groupItems;
 
-        BindGroupEntry& setBinding(Uint32 value) override { this->binding = value; return *this; }
+        constexpr TextureBindGroupEntry& setBinding(Uint32 value) { this->binding = value; return *this; }
 
-       constexpr TextureBindGroupEntry& setEntries(const std::vector<TextureBindGroupItem>& value) { this->groupItems = value; return *this; }
+        constexpr TextureBindGroupEntry& setEntries(const std::vector<TextureBindGroupItem>& value) { this->groupItems = value; return *this; }
        
-       constexpr TextureBindGroupEntry& addEntry(TextureBindGroupItem item) { this->groupItems.emplace_back(item); return *this; }
+        constexpr TextureBindGroupEntry& addEntry(TextureBindGroupItem item) { this->groupItems.emplace_back(item); return *this; }
 
         constexpr TextureBindGroupEntry& addEntry(TextureView* textureView) { 
             this->groupItems.emplace_back(
@@ -610,7 +608,7 @@ namespace RHI {
     struct SamplerBindGroupEntry : BindGroupEntry {
         std::vector<SamplerBindGroupItem> groupItems;
 
-        BindGroupEntry& setBinding(Uint32 value) override { this->binding = value; return *this; }
+        constexpr SamplerBindGroupEntry& setBinding(Uint32 value) { this->binding = value; return *this; }
 
         constexpr SamplerBindGroupEntry& setEntries(const std::vector<SamplerBindGroupItem>& value) { this->groupItems = value; return *this; }
        
@@ -628,61 +626,64 @@ namespace RHI {
 
     struct BindGroupDescriptor {
         BindGroupLayout* layout;
-        std::map<Uint32, BindGroupEntry*> entries;
+
+        std::map<Uint32, BufferBindGroupEntry> bufferEntries;
+        std::map<Uint32, TextureBindGroupEntry> textureEntries;
+        std::map<Uint32, SamplerBindGroupEntry> samplerEntries;
 
         constexpr BindGroupDescriptor& setLayout(BindGroupLayout* value) { this->layout = value; return *this; }
         
         constexpr BindGroupDescriptor& addBuffer(Uint32 binding, Buffer* buffer, Uint64 size = ULLONG_MAX, Uint64 offset = 0) {
-            BufferBindGroupEntry* groupEntry = new BufferBindGroupEntry();
-            groupEntry->setBinding(binding);
-            groupEntry->addEntry(buffer, size, offset);
+            BufferBindGroupEntry groupEntry = BufferBindGroupEntry()
+                .setBinding(binding)
+                .addEntry(buffer, size, offset);
 
-            this->entries[binding] = groupEntry;
+            this->bufferEntries[binding] = groupEntry;
             return *this;
         }
 
         constexpr BindGroupDescriptor& addBuffer(Uint32 binding, const std::vector<BufferBindGroupItem>& entries) {
-            BufferBindGroupEntry* groupEntry = new BufferBindGroupEntry();
-            groupEntry->setBinding(binding);
-            groupEntry->setEntries(entries);
+            BufferBindGroupEntry groupEntry = BufferBindGroupEntry()
+                .setBinding(binding)
+                .setEntries(entries);
 
-            this->entries[binding] = groupEntry;
+            this->bufferEntries[binding] = groupEntry;
             return *this;
         }
 
         constexpr BindGroupDescriptor& addTextureView(Uint32 binding, TextureView* textureView) {
-            TextureBindGroupEntry* groupEntry = new TextureBindGroupEntry();
-            groupEntry->setBinding(binding);
-            groupEntry->addEntry(textureView);
+            TextureBindGroupEntry groupEntry = TextureBindGroupEntry()
+                .setBinding(binding)
+                .addEntry(textureView);
 
-            this->entries[binding] = groupEntry;
+            this->textureEntries[binding] = groupEntry;
             return *this;
         }
 
         constexpr BindGroupDescriptor& addTextureView(Uint32 binding, const std::vector<TextureBindGroupItem>& entries) {
-            TextureBindGroupEntry* groupEntry = new TextureBindGroupEntry();
-            groupEntry->setBinding(binding);
-            groupEntry->setEntries(entries);
+            TextureBindGroupEntry groupEntry = TextureBindGroupEntry()
+                .setBinding(binding)
+                .setEntries(entries);
 
-            this->entries[binding] = groupEntry;
+            this->textureEntries[binding] = groupEntry;
             return *this;
         }
 
         constexpr BindGroupDescriptor& addSampler(Uint32 binding, Sampler* sampler) {
-            SamplerBindGroupEntry* groupEntry = new SamplerBindGroupEntry();
-            groupEntry->setBinding(binding);
-            groupEntry->addEntry(sampler);
+            SamplerBindGroupEntry groupEntry = SamplerBindGroupEntry()
+                .setBinding(binding)
+                .addEntry(sampler);
 
-            this->entries[binding] = groupEntry;
+            this->samplerEntries[binding] = groupEntry;
             return *this;
         }
 
         constexpr BindGroupDescriptor& addSampler(Uint32 binding, const std::vector<SamplerBindGroupItem>& entries) {
-            SamplerBindGroupEntry* groupEntry = new SamplerBindGroupEntry();
-            groupEntry->setBinding(binding);
-            groupEntry->setEntries(entries);
+            SamplerBindGroupEntry groupEntry = SamplerBindGroupEntry()
+                .setBinding(binding)
+                .setEntries(entries);
 
-            this->entries[binding] = groupEntry;
+            this->samplerEntries[binding] = groupEntry;
             return *this;
         }
     };
