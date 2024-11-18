@@ -340,8 +340,8 @@ namespace RHI {
 
     VkDescriptorType convertBindTypeIntoVulkan(BindingType type) {
         switch (type) {
-            case BindingType::eUniformBuffer : return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            case BindingType::eStorageBuffer : return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            case BindingType::eUniformBuffer : return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+            case BindingType::eStorageBuffer : return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
             case BindingType::eSampledTexture : return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
             case BindingType::eStorageTexture : return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
             case BindingType::eSampler : return VK_DESCRIPTOR_TYPE_SAMPLER;
@@ -675,6 +675,15 @@ namespace RHI {
             case StoreOp::eDiscard : return VK_ATTACHMENT_STORE_OP_DONT_CARE;
             
             default: return VK_ATTACHMENT_STORE_OP_STORE;
+        }
+    }
+
+    VkIndexType convertIndexFormatIntoVulkan(IndexFormat format) {
+        switch (format) {
+            case IndexFormat::eUint16 : return VK_INDEX_TYPE_UINT16;
+            case IndexFormat::eUint32 : return VK_INDEX_TYPE_UINT32;
+            
+            default: return VK_INDEX_TYPE_UINT32;
         }
     }
 }

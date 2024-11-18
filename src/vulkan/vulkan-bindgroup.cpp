@@ -9,10 +9,10 @@ namespace RHI {
 
         for (auto &&entry : desc.entries) {
             VkDescriptorSetLayoutBinding bindLayout;
-            bindLayout.binding = entry.binding;
-            bindLayout.descriptorType = convertBindTypeIntoVulkan(entry.type);
-            bindLayout.stageFlags = convertShaderStageIntoVulkan(entry.shaderStage);
-            bindLayout.descriptorCount = entry.bindCount;
+            bindLayout.binding = entry.second.binding;
+            bindLayout.descriptorType = convertBindTypeIntoVulkan(entry.second.type);
+            bindLayout.stageFlags = convertShaderStageIntoVulkan(entry.second.shaderStage);
+            bindLayout.descriptorCount = entry.second.bindCount;
 
             bindLayouts.emplace_back(bindLayout);
         }
@@ -47,38 +47,26 @@ namespace RHI {
             throw std::runtime_error("Failed to allocate descriptor set!");
         }
 
-        std::vector<VkWriteDescriptorSet> writeDescSets(desc.entries.size());
-        std::vector<BindGroupLayoutEntry> layoutEntries = desc.layout->getDesc().entries;
+        std::vector<VkWriteDescriptorSet> writeDescSets;
 
+        std::map<Uint32, BindGroupLayoutEntry> layoutEntries = desc.layout->getDesc().entries;
         std::vector<VkDescriptorBufferInfo> bufferInfos;
         std::vector<VkDescriptorImageInfo> imageInfos;
 
-        for (uint8_t i = 0; i < desc.entries.size(); i++) {
-            BindGroupEntry* entry = desc.entries[i];
+        for (auto &&entry : desc.entries) {
+            VkWriteDescriptorSet writeDescSet;
 
-            int8_t layoutIndex = -1;
-            for (int8_t j = 0; j < layoutEntries.size(); j++) {
-                if (entry->binding == layoutEntries[j].binding) {
-                    layoutIndex = j;
-                    break;
-                }
-            }
-
-            if (layoutIndex < 0) {
-                throw std::runtime_error("No binding in group founded in layout");
-            }
-
-            writeDescSets[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            writeDescSets[i].dstSet = descSet;
-            writeDescSets[i].dstBinding = entry->binding;
+            writeDescSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writeDescSet.dstSet = descSet;
+            writeDescSet.dstBinding = entry.second->binding;
             
-            writeDescSets[i].descriptorType = convertBindTypeIntoVulkan(layoutEntries[layoutIndex].type);
+            writeDescSet.descriptorType = convertBindTypeIntoVulkan(layoutEntries[entry.first].type);
 
-            BufferBindGroupEntry* bufferEntry = dynamic_cast<BufferBindGroupEntry*>(entry);
+            BufferBindGroupEntry* bufferEntry = dynamic_cast<BufferBindGroupEntry*>(entry.second);
 
             if (bufferEntry != nullptr) {
-                writeDescSets[i].descriptorCount = static_cast<Uint32>(bufferEntry->groupItems.size());
-                std::vector<VkDescriptorBufferInfo> bufferInfos { writeDescSets[i].descriptorCount };
+                writeDescSet.descriptorCount = static_cast<Uint32>(bufferEntry->groupItems.size());
+                std::vector<VkDescriptorBufferInfo> bufferInfos { writeDescSet.descriptorCount };
 
                 for (size_t i = 0; i < bufferInfos.size(); i++) {
                     bufferInfos[i].buffer = static_cast<VulkanBuffer*>(bufferEntry->groupItems[i].buffer)->getNative();
@@ -86,15 +74,15 @@ namespace RHI {
                     bufferInfos[i].offset = bufferEntry->groupItems[i].offset;
                 }
 
-                writeDescSets[i].pBufferInfo = bufferInfos.data();
+                writeDescSet.pBufferInfo = bufferInfos.data();
                 continue;
             }
 
-            TextureBindGroupEntry* textureEntry = dynamic_cast<TextureBindGroupEntry*>(entry);
+            TextureBindGroupEntry* textureEntry = dynamic_cast<TextureBindGroupEntry*>(entry.second);
 
             if (textureEntry != nullptr) {
-                writeDescSets[i].descriptorCount = static_cast<Uint32>(textureEntry->groupItems.size());
-                std::vector<VkDescriptorImageInfo> imageInfos { writeDescSets[i].descriptorCount };
+                writeDescSet.descriptorCount = static_cast<Uint32>(textureEntry->groupItems.size());
+                std::vector<VkDescriptorImageInfo> imageInfos { writeDescSet.descriptorCount };
 
                 for (size_t i = 0; i < imageInfos.size(); i++) {
                     VulkanTextureView* txtView = dynamic_cast<VulkanTextureView*>(textureEntry->groupItems[i].textureView);
@@ -105,23 +93,25 @@ namespace RHI {
                         : VK_IMAGE_LAYOUT_GENERAL;
                 }
 
-                writeDescSets[i].pImageInfo = imageInfos.data();
+                writeDescSet.pImageInfo = imageInfos.data();
                 continue;
             }
 
-            SamplerBindGroupEntry* samplerEntry = dynamic_cast<SamplerBindGroupEntry*>(entry);
+            SamplerBindGroupEntry* samplerEntry = dynamic_cast<SamplerBindGroupEntry*>(entry.second);
 
             if (samplerEntry != nullptr) {
-                writeDescSets[i].descriptorCount = static_cast<Uint32>(samplerEntry->groupItems.size());
-                std::vector<VkDescriptorImageInfo> imageInfos { writeDescSets[i].descriptorCount };
+                writeDescSet.descriptorCount = static_cast<Uint32>(samplerEntry->groupItems.size());
+                std::vector<VkDescriptorImageInfo> imageInfos { writeDescSet.descriptorCount };
 
                 for (size_t i = 0; i < imageInfos.size(); i++) {
                     imageInfos[i].sampler = dynamic_cast<VulkanSampler*>(samplerEntry->groupItems[i].sampler)->getNative();
                 }
 
-                writeDescSets[i].pImageInfo = imageInfos.data();
+                writeDescSet.pImageInfo = imageInfos.data();
                 continue;
             }
+
+            writeDescSets.emplace_back(writeDescSet);
         }
 
         vkUpdateDescriptorSets(this->device, static_cast<Uint32>(writeDescSets.size()), 

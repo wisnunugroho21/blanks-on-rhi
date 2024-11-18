@@ -395,11 +395,13 @@ namespace RHI {
 
         }
 
+        RenderState getCurrentState() override { return this->currentState; }
+
         void setViewport(float x, float y, float width, float height, float minDepth, float maxDepth) override;
         void setViewport(Viewport viewport) override;
         void setViewport(std::vector<Viewport> viewports) override;
 
-        void setScissorRect(Uint32 x, Uint32 y, Uint32 width, Uint32 height) override;
+        void setScissorRect(Int32 x, Int32 y, Uint32 width, Uint32 height) override;
         void setScissorRect(Rect2D scissor) override;
         void setScissorRect(std::vector<Rect2D> scissors) override;
 
@@ -419,11 +421,29 @@ namespace RHI {
 
         void setStencilReference(Uint32 reference) override;
 
+        void setPipeline(RenderPipeline* pipeline) override;
+
+        void setBindGroup(Uint32 index, BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets = {}) override;
+
+        void setIndexBuffer(Buffer* buffer, Uint64 offset = 0) override;
+        void setVertexBuffer(std::vector<Buffer*> buffer, std::vector<Uint64> offsets = {}) override;
+
+        void draw(Uint32 vertexCount, Uint32 instanceCount = 1,  Uint32 firstVertex = 0, Uint32 firstInstance = 0) override;
+        void drawIndexed(Uint32 indexCount, Uint32 instanceCount = 1, Uint32 firstIndex = 0, Int32 baseVertex = 0, 
+            Uint32 firstInstance = 0) override;
+
+        void drawIndirect(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Uint64 drawCount = 1) override;
+        void drawIndirectCount(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Buffer* countBuffer, Uint64 countOffset = 0) override;
+
+        void drawIndexedIndirect(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Uint64 drawCount = 1) override;
+        void drawIndexedIndirectCount(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Buffer* countBuffer, Uint64 countOffset = 0) override;
+
         void end() override;
 
     protected:
         RenderPassDescriptor desc;
         CommandEncoder* commandEncoder;
+        RenderState currentState;
     };
 
     class VulkanCommandEncoder : public CommandEncoder {
@@ -560,4 +580,6 @@ namespace RHI {
     VkAttachmentLoadOp convertLoadOpIntoVulkan(LoadOp loadOp);
 
     VkAttachmentStoreOp convertStoreOpIntoVulkan(StoreOp storeOp);
+
+    VkIndexType convertIndexFormatIntoVulkan(IndexFormat format);
 }

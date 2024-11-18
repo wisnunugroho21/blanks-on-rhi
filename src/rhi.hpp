@@ -511,19 +511,24 @@ namespace RHI {
     };
 
     struct BindGroupLayoutDescriptor {
-        std::vector<BindGroupLayoutEntry> entries;
+        std::map<Uint32, BindGroupLayoutEntry> entries;
 
-        constexpr BindGroupLayoutDescriptor& setEntries(const std::vector<BindGroupLayoutEntry>& value) { this->entries = value; return *this; }
+        constexpr BindGroupLayoutDescriptor& setEntries(const std::vector<BindGroupLayoutEntry>& value) { 
+            for (auto &&item : value) {
+                this->entries[item.binding] = item;
+            }
+             
+            return *this;
+        }
 
-        constexpr BindGroupLayoutDescriptor& addEntry(BindGroupLayoutEntry item) { this->entries.emplace_back(item); return *this; }
+        constexpr BindGroupLayoutDescriptor& addEntry(BindGroupLayoutEntry item) { this->entries[item.binding] = item; return *this; }
         constexpr BindGroupLayoutDescriptor& addEntry(Uint32 binding, ShaderStageFlags shaderStage, BindingType type, Uint32 bindCount = 1) { 
-            this->entries.emplace_back(
+            this->entries[binding] = 
                 BindGroupLayoutEntry()
                     .setBinding(binding)
                     .setShaderStage(shaderStage)
                     .setType(type)
-                    .setBindCount(bindCount)
-            );
+                    .setBindCount(bindCount);
 
             return *this; 
         }
@@ -623,7 +628,7 @@ namespace RHI {
 
     struct BindGroupDescriptor {
         BindGroupLayout* layout;
-        std::vector<BindGroupEntry*> entries;
+        std::map<Uint32, BindGroupEntry*> entries;
 
         constexpr BindGroupDescriptor& setLayout(BindGroupLayout* value) { this->layout = value; return *this; }
         
@@ -632,7 +637,7 @@ namespace RHI {
             groupEntry->setBinding(binding);
             groupEntry->addEntry(buffer, size, offset);
 
-            this->entries.emplace_back(groupEntry);
+            this->entries[binding] = groupEntry;
             return *this;
         }
 
@@ -641,7 +646,7 @@ namespace RHI {
             groupEntry->setBinding(binding);
             groupEntry->setEntries(entries);
 
-            this->entries.emplace_back(groupEntry);
+            this->entries[binding] = groupEntry;
             return *this;
         }
 
@@ -650,7 +655,7 @@ namespace RHI {
             groupEntry->setBinding(binding);
             groupEntry->addEntry(textureView);
 
-            this->entries.emplace_back(groupEntry);
+            this->entries[binding] = groupEntry;
             return *this;
         }
 
@@ -659,7 +664,7 @@ namespace RHI {
             groupEntry->setBinding(binding);
             groupEntry->setEntries(entries);
 
-            this->entries.emplace_back(groupEntry);
+            this->entries[binding] = groupEntry;
             return *this;
         }
 
@@ -668,7 +673,7 @@ namespace RHI {
             groupEntry->setBinding(binding);
             groupEntry->addEntry(sampler);
 
-            this->entries.emplace_back(groupEntry);
+            this->entries[binding] = groupEntry;
             return *this;
         }
 
@@ -677,7 +682,7 @@ namespace RHI {
             groupEntry->setBinding(binding);
             groupEntry->setEntries(entries);
 
-            this->entries.emplace_back(groupEntry);
+            this->entries[binding] = groupEntry;
             return *this;
         }
     };
@@ -1189,10 +1194,7 @@ namespace RHI {
     // ===========================================================================================================================
 
     class BindingCommandsMixin {
-        virtual void setBindGroup(Uint32 index, BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets) = 0;
-
-        virtual void setBindGroup(Uint32 index, BindGroup* bindGroup, Uint32 dynamicOffsetsData[],
-            Uint64 dynamicOffsetsDataStart, Uint32 dynamicOffsetsDataLength) = 0;
+        virtual void setBindGroup(Uint32 index, BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets = {}) = 0;
     };
 
     // ===========================================================================================================================
@@ -1279,15 +1281,18 @@ namespace RHI {
     class RenderCommandsMixin {
         virtual void setPipeline(RenderPipeline* pipeline) = 0;
 
-        virtual void setIndexBuffer(Buffer* buffer, IndexFormat indexFormat, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
-        virtual void setVertexBuffer(Uint32 slot, Buffer* buffer, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
+        virtual void setIndexBuffer(Buffer* buffer, Uint64 offset = 0) = 0;
+        virtual void setVertexBuffer(std::vector<Buffer*> buffer, std::vector<Uint64> offsets = {}) = 0;
 
         virtual void draw(Uint32 vertexCount, Uint32 instanceCount = 1,  Uint32 firstVertex = 0, Uint32 firstInstance = 0) = 0;
         virtual void drawIndexed(Uint32 indexCount, Uint32 instanceCount = 1, Uint32 firstIndex = 0, Int32 baseVertex = 0, 
             Uint32 firstInstance = 0) = 0;
 
-        virtual void drawIndirect(Buffer* indirectBuffer, Uint64 indirectOffset) = 0;
-        virtual void drawIndexedIndirect(Buffer* indirectBuffer, Uint64 indirectOffset) = 0;
+        virtual void drawIndirect(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Uint64 drawCount = 1) = 0;
+        virtual void drawIndirectCount(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Buffer* countBuffer, Uint64 countOffset = 0) = 0;
+
+        virtual void drawIndexedIndirect(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Uint64 drawCount = 1) = 0;
+        virtual void drawIndexedIndirectCount(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Buffer* countBuffer, Uint64 countOffset = 0) = 0;
     };
 
     struct RenderPassDescriptor {
@@ -1301,16 +1306,32 @@ namespace RHI {
         Uint64 maxDrawCount = 50000000;
     };
 
+    struct RenderState {
+        RenderPipeline* pipeline;
+
+        std::vector<Viewport> viewports;
+        std::vector<Rect2D> scissors;
+        float lineWidth;
+        DepthBias depthBias;
+        Color blendConstant;
+        float depthBoundMin;
+        float depthBoundMax;
+        Uint32 stencilCompareMask;
+        Uint32 stencilWriteMask;
+        Uint32 stencilReference;
+    };
+
     class RenderPassEncoder : public CommandsMixin, public BindingCommandsMixin, public RenderCommandsMixin {
     public:
         virtual RenderPipelineDescriptor getDesc() = 0;
         virtual CommandEncoder* getCommandEncoder() = 0;
+        virtual RenderState getCurrentState() = 0;
 
         virtual void setViewport(float x, float y, float width, float height, float minDepth, float maxDepth) = 0;
         virtual void setViewport(Viewport viewport) = 0;
         virtual void setViewport(std::vector<Viewport> viewports) = 0;
 
-        virtual void setScissorRect(Uint32 x, Uint32 y, Uint32 width, Uint32 height) = 0;
+        virtual void setScissorRect(Int32 x, Int32 y, Uint32 width, Uint32 height) = 0;
         virtual void setScissorRect(Rect2D rect) = 0;
         virtual void setScissorRect(std::vector<Rect2D> rects) = 0;
 
@@ -1318,9 +1339,9 @@ namespace RHI {
 
         virtual void setDepthBias(float constant, float clamp, float slopeScale) = 0;
         virtual void setDepthBias(DepthBias depthBias) = 0;
-
-        virtual void setBlendConstant(Color color) = 0;
+        
         virtual void setBlendConstant(float r, float g, float b, float a) = 0;
+        virtual void setBlendConstant(Color blendConstant) = 0;
 
         virtual void setDepthBounds(float min, float max) = 0;
 
