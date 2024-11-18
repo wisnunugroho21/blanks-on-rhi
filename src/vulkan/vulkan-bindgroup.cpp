@@ -117,6 +117,10 @@ namespace RHI {
         vkUpdateDescriptorSets(this->device, static_cast<Uint32>(writeDescSets.size()), 
             writeDescSets.data(), 0, nullptr);
 
+        for (auto &&entry : desc.entries) {
+            delete entry.second;
+        }
+
         return std::make_shared<VulkanBindGroup>(desc, this, descSet);
     }
 }
