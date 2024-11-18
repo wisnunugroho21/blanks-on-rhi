@@ -294,6 +294,33 @@ namespace RHI {
         );
     }
 
+    void VulkanRenderPassEncoder::setBindGroup(std::vector<BindGroup*> bindGroups, std::vector<Uint32> dynamicOffsets = {}) {
+        VulkanRenderPipeline* pipeline = dynamic_cast<VulkanRenderPipeline*>(this->currentState.pipeline);
+        
+        std::vector<uint32_t> vulkanDynamicOffsets;
+        for (auto &&dynamicOffset : dynamicOffsets) {
+            vulkanDynamicOffsets.emplace_back(dynamicOffset);
+        }
+        
+        std::vector<VkDescriptorSet> vulkanDescSets;
+        for (auto &&bindGroup : bindGroups) {
+            vulkanDescSets.emplace_back(
+                dynamic_cast<VulkanBindGroup*>(bindGroup)->getNative()
+            );
+        }
+
+        vkCmdBindDescriptorSets(
+            dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative(),
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            dynamic_cast<VulkanPipelineLayout*>(pipeline->getDesc().layout)->getNative(),
+            0,
+            static_cast<uint32_t>(vulkanDescSets.size()),
+            vulkanDescSets.data(),
+            static_cast<uint32_t>(vulkanDynamicOffsets.size()),
+            vulkanDynamicOffsets.data()
+        );
+    }
+
     void VulkanRenderPassEncoder::setIndexBuffer(Buffer* buffer, Uint64 offset) {
         vkCmdBindIndexBuffer(
             dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative(),

@@ -1195,6 +1195,8 @@ namespace RHI {
 
     class BindingCommandsMixin {
         virtual void setBindGroup(Uint32 index, BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets = {}) = 0;
+
+        virtual void setBindGroup(std::vector<BindGroup*>  bindGroup, std::vector<Uint32> dynamicOffsets = {}) = 0;
     };
 
     // ===========================================================================================================================

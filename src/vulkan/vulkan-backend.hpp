@@ -424,6 +424,7 @@ namespace RHI {
         void setPipeline(RenderPipeline* pipeline) override;
 
         void setBindGroup(Uint32 index, BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets = {}) override;
+        void setBindGroup(std::vector<BindGroup*>  bindGroup, std::vector<Uint32> dynamicOffsets = {}) override;
 
         void setIndexBuffer(Buffer* buffer, Uint64 offset = 0) override;
         void setVertexBuffer(std::vector<Buffer*> buffer, std::vector<Uint64> offsets = {}) override;
