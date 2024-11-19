@@ -88,8 +88,8 @@ namespace RHI {
             &viewport
         );
 
-        this->currentState.viewports.clear();
-        this->currentState.viewports.emplace_back(
+        this->currentRenderState.viewports.clear();
+        this->currentRenderState.viewports.emplace_back(
             Viewport {
                 .x = x,
                 .y = y,
@@ -119,7 +119,7 @@ namespace RHI {
             vulkanViewports.data()
         );
 
-        this->currentState.viewports = viewports;
+        this->currentRenderState.viewports = viewports;
     }
 
     void VulkanRenderPassEncoder::setScissorRect(Int32 x, Int32 y, Uint32 width, Uint32 height) {
@@ -137,8 +137,8 @@ namespace RHI {
             &rect2d
         );
 
-        this->currentState.scissors.clear();
-        this->currentState.scissors.emplace_back(
+        this->currentRenderState.scissors.clear();
+        this->currentRenderState.scissors.emplace_back(
             Rect2D {
                 .width = width,
                 .height = height,
@@ -166,7 +166,7 @@ namespace RHI {
             vulkanScissors.data()
         );
 
-        this->currentState.scissors = scissors;
+        this->currentRenderState.scissors = scissors;
     }
 
     void VulkanRenderPassEncoder::setLineWidth(float lineWidth) {
@@ -175,7 +175,7 @@ namespace RHI {
             lineWidth
         );
 
-        this->currentState.lineWidth = lineWidth;
+        this->currentRenderState.lineWidth = lineWidth;
     }
 
     void VulkanRenderPassEncoder::setDepthBias(float constant, float clamp, float slopeScale) {
@@ -186,7 +186,7 @@ namespace RHI {
             slopeScale
         );
 
-        this->currentState.depthBias = 
+        this->currentRenderState.depthBias = 
             DepthBias {
                 .constant = constant,
                 .clamp = clamp,
@@ -207,7 +207,7 @@ namespace RHI {
             blendConstants
         );
 
-        this->currentState.blendConstant = 
+        this->currentRenderState.blendConstant = 
             Color {
                 r = r,
                 g = g,
@@ -227,8 +227,8 @@ namespace RHI {
             max
         );
 
-        this->currentState.depthBoundMin = min;
-        this->currentState.depthBoundMax = max;
+        this->currentRenderState.depthBoundMin = min;
+        this->currentRenderState.depthBoundMax = max;
     }
 
     void VulkanRenderPassEncoder::setStencilCompareMask(Uint32 compareMask) {
@@ -238,7 +238,7 @@ namespace RHI {
             compareMask
         );
 
-        this->currentState.stencilCompareMask = compareMask;
+        this->currentRenderState.stencilCompareMask = compareMask;
     }
 
     void VulkanRenderPassEncoder::setStencilWriteMask(Uint32 writeMask) {
@@ -248,7 +248,7 @@ namespace RHI {
             writeMask
         );
 
-        this->currentState.stencilWriteMask = writeMask;
+        this->currentRenderState.stencilWriteMask = writeMask;
     }
 
     void VulkanRenderPassEncoder::setStencilReference(Uint32 reference) {
@@ -258,7 +258,7 @@ namespace RHI {
             reference
         );
 
-        this->currentState.stencilReference = reference;
+        this->currentRenderState.stencilReference = reference;
     }
 
     void VulkanRenderPassEncoder::end() {
@@ -272,11 +272,11 @@ namespace RHI {
             dynamic_cast<VulkanRenderPipeline*>(pipeline)->getNative()
         );
 
-        this->currentState.pipeline = pipeline;
+        this->currentRenderState.pipeline = pipeline;
     }
 
-    void VulkanRenderPassEncoder::setBindGroup(Uint32 index, BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets) {
-        VulkanRenderPipeline* pipeline = dynamic_cast<VulkanRenderPipeline*>(this->currentState.pipeline);
+    void VulkanRenderPassEncoder::setBindGroup(BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets) {
+        VulkanRenderPipeline* pipeline = dynamic_cast<VulkanRenderPipeline*>(this->currentRenderState.pipeline);
         VkDescriptorSet descSet = dynamic_cast<VulkanBindGroup*>(bindGroup)->getNative();
         
         std::vector<uint32_t> vulkanDynamicOffsets;
@@ -288,16 +288,21 @@ namespace RHI {
             dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             dynamic_cast<VulkanPipelineLayout*>(pipeline->getDesc().layout)->getNative(),
-            index,
+            0,
             1,
             &descSet,
             static_cast<uint32_t>(vulkanDynamicOffsets.size()),
             vulkanDynamicOffsets.data()
         );
+
+        this->currentRenderState.bindGroups.clear();
+        this->currentRenderState.bindGroups.emplace_back(bindGroup);
+
+        this->currentRenderState.dynamicOffsets = dynamicOffsets;
     }
 
     void VulkanRenderPassEncoder::setBindGroup(std::vector<BindGroup*> bindGroups, std::vector<Uint32> dynamicOffsets = {}) {
-        VulkanRenderPipeline* pipeline = dynamic_cast<VulkanRenderPipeline*>(this->currentState.pipeline);
+        VulkanRenderPipeline* pipeline = dynamic_cast<VulkanRenderPipeline*>(this->currentRenderState.pipeline);
         
         std::vector<uint32_t> vulkanDynamicOffsets;
         for (auto &&dynamicOffset : dynamicOffsets) {
@@ -321,6 +326,9 @@ namespace RHI {
             static_cast<uint32_t>(vulkanDynamicOffsets.size()),
             vulkanDynamicOffsets.data()
         );
+
+        this->currentRenderState.bindGroups = bindGroups;
+        this->currentRenderState.dynamicOffsets = dynamicOffsets;
     }
 
     void VulkanRenderPassEncoder::setIndexBuffer(Buffer* buffer, Uint64 offset) {
@@ -328,8 +336,29 @@ namespace RHI {
             dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative(),
             dynamic_cast<VulkanBuffer*>(buffer)->getNative(),
             offset,
-            convertIndexFormatIntoVulkan(this->currentState.pipeline->getDesc().primitive.stripIndexFormat)
+            convertIndexFormatIntoVulkan(this->currentRenderState.pipeline->getDesc().primitive.stripIndexFormat)
         );
+
+        this->currentRenderState.indexBuffer = buffer;
+        this->currentRenderState.indexOffset = offset;
+    }
+
+    void VulkanRenderPassEncoder::setVertexBuffer(Buffer* buffer, Uint64 offset = 0) {
+        VkBuffer vulkanBuffer = dynamic_cast<VulkanBuffer*>(buffer)->getNative();
+
+        vkCmdBindVertexBuffers(
+            dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative(),
+            0, 
+            1,
+            &vulkanBuffer,
+            &offset
+        );
+
+        this->currentRenderState.vertexBuffers.clear();
+        this->currentRenderState.vertexBuffers.emplace_back(buffer);
+
+        this->currentRenderState.vertexOffsets.clear();
+        this->currentRenderState.vertexOffsets.emplace_back(offset);
     }
 
     void VulkanRenderPassEncoder::setVertexBuffer(std::vector<Buffer*> buffers, std::vector<Uint64> offsets = {}) {
@@ -359,6 +388,9 @@ namespace RHI {
             vulkanBuffers.data(),
             vulkanOffsets.data()
         );
+
+        this->currentRenderState.vertexBuffers = buffers;
+        this->currentRenderState.vertexOffsets = offsets;
     }
 
     void VulkanRenderPassEncoder::draw(Uint32 vertexCount, Uint32 instanceCount,  Uint32 firstVertex, Uint32 firstInstance) {

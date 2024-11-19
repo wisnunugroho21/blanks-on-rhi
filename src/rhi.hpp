@@ -1140,12 +1140,12 @@ namespace RHI {
 
     enum class CommandState : Uint8 {
         eOpen,
-        eLocked,
-        eEnded
+        eEnded,
+        eSubmitted
     };
 
     class CommandsMixin {
-        CommandState state;
+        virtual CommandState getCommandState() = 0;
     };
 
     class CommandEncoder : public CommandsMixin, public BarrierCommandsMixin {
@@ -1195,9 +1195,9 @@ namespace RHI {
     // ===========================================================================================================================
 
     class BindingCommandsMixin {
-        virtual void setBindGroup(Uint32 index, BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets = {}) = 0;
+        virtual void setBindGroup(BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets = {}) = 0;
 
-        virtual void setBindGroup(std::vector<BindGroup*>  bindGroup, std::vector<Uint32> dynamicOffsets = {}) = 0;
+        virtual void setBindGroup(std::vector<BindGroup*> bindGroup, std::vector<Uint32> dynamicOffsets = {}) = 0;
     };
 
     // ===========================================================================================================================
@@ -1285,7 +1285,9 @@ namespace RHI {
         virtual void setPipeline(RenderPipeline* pipeline) = 0;
 
         virtual void setIndexBuffer(Buffer* buffer, Uint64 offset = 0) = 0;
-        virtual void setVertexBuffer(std::vector<Buffer*> buffer, std::vector<Uint64> offsets = {}) = 0;
+
+        virtual void setVertexBuffer(Buffer* buffer, Uint64 offsets = 0) = 0;
+        virtual void setVertexBuffer(std::vector<Buffer*> buffers, std::vector<Uint64> offsets = {}) = 0;
 
         virtual void draw(Uint32 vertexCount, Uint32 instanceCount = 1,  Uint32 firstVertex = 0, Uint32 firstInstance = 0) = 0;
         virtual void drawIndexed(Uint32 indexCount, Uint32 instanceCount = 1, Uint32 firstIndex = 0, Int32 baseVertex = 0, 
@@ -1311,6 +1313,15 @@ namespace RHI {
 
     struct RenderState {
         RenderPipeline* pipeline;
+        
+        std::vector<BindGroup*> bindGroups;
+        std::vector<Uint32> dynamicOffsets;
+
+        Buffer* indexBuffer;
+        Uint64 indexOffset;
+
+        std::vector<Buffer*> vertexBuffers;
+        std::vector<Uint64> vertexOffsets;
 
         std::vector<Viewport> viewports;
         std::vector<Rect2D> scissors;
@@ -1328,7 +1339,8 @@ namespace RHI {
     public:
         virtual RenderPipelineDescriptor getDesc() = 0;
         virtual CommandEncoder* getCommandEncoder() = 0;
-        virtual RenderState getCurrentState() = 0;
+        
+        virtual RenderState getRenderState() = 0;
 
         virtual void setViewport(float x, float y, float width, float height, float minDepth, float maxDepth) = 0;
         virtual void setViewport(Viewport viewport) = 0;

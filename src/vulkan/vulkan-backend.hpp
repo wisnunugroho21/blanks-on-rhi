@@ -383,6 +383,11 @@ namespace RHI {
         VkPipeline pipeline;
     };
 
+    class VulkanComputePassEncoder : public ComputePassEncoder {
+    public:
+        
+    };
+
     class VulkanRenderPassEncoder : public RenderPassEncoder {
     public:
         VulkanRenderPassEncoder(
@@ -395,7 +400,8 @@ namespace RHI {
 
         }
 
-        RenderState getCurrentState() override { return this->currentState; }
+        RenderState getRenderState() override { return this->currentRenderState; }
+        CommandState getCommandState() override { return this->currentCommandState; }
 
         void setViewport(float x, float y, float width, float height, float minDepth, float maxDepth) override;
         void setViewport(Viewport viewport) override;
@@ -423,11 +429,13 @@ namespace RHI {
 
         void setPipeline(RenderPipeline* pipeline) override;
 
-        void setBindGroup(Uint32 index, BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets = {}) override;
+        void setBindGroup(BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets = {}) override;
         void setBindGroup(std::vector<BindGroup*>  bindGroup, std::vector<Uint32> dynamicOffsets = {}) override;
 
         void setIndexBuffer(Buffer* buffer, Uint64 offset = 0) override;
-        void setVertexBuffer(std::vector<Buffer*> buffer, std::vector<Uint64> offsets = {}) override;
+
+        void setVertexBuffer(Buffer* buffer, Uint64 offsets = 0) override;
+        void setVertexBuffer(std::vector<Buffer*> buffers, std::vector<Uint64> offsets = {}) override;
 
         void draw(Uint32 vertexCount, Uint32 instanceCount = 1,  Uint32 firstVertex = 0, Uint32 firstInstance = 0) override;
         void drawIndexed(Uint32 indexCount, Uint32 instanceCount = 1, Uint32 firstIndex = 0, Int32 baseVertex = 0, 
@@ -444,7 +452,9 @@ namespace RHI {
     protected:
         RenderPassDescriptor desc;
         CommandEncoder* commandEncoder;
-        RenderState currentState;
+
+        RenderState currentRenderState;
+        CommandState currentCommandState;
     };
 
     class VulkanCommandEncoder : public CommandEncoder {
