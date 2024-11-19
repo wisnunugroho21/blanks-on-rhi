@@ -4,8 +4,6 @@
 
 namespace RHI {
     std::shared_ptr<PipelineLayout> VulkanDevice::createPipelineLayout(PipelineLayoutDescriptor desc) {
-        VkPipelineLayout pipelineLayout;
-
         std::vector<VkDescriptorSetLayout> vulkanDescLayouts;
         std::vector<VkPushConstantRange> vulkanPushConstants;
 
@@ -14,19 +12,22 @@ namespace RHI {
         }
 
         for (auto &&constantLayout : desc.constantLayouts) {
-            VkPushConstantRange pushConstant{};
-            pushConstant.stageFlags = convertShaderStageIntoVulkan(constantLayout.shaderStage);
-            pushConstant.size = constantLayout.size;
-            pushConstant.offset = constantLayout.offset;
+            VkPushConstantRange pushConstant{
+                .stageFlags = convertShaderStageIntoVulkan(constantLayout.shaderStage),
+                .size = constantLayout.size,
+                .offset = constantLayout.offset
+            };
         }
 
-        VkPipelineLayoutCreateInfo pipelineInfo{};
-        pipelineInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineInfo.setLayoutCount = static_cast<uint32_t>(vulkanDescLayouts.size());
-        pipelineInfo.pSetLayouts = vulkanDescLayouts.data();
-        pipelineInfo.pushConstantRangeCount = static_cast<uint32_t>(vulkanPushConstants.size());
-        pipelineInfo.pPushConstantRanges = vulkanPushConstants.data();
+        VkPipelineLayoutCreateInfo pipelineInfo{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .setLayoutCount = static_cast<uint32_t>(vulkanDescLayouts.size()),
+            .pSetLayouts = vulkanDescLayouts.data(),
+            .pushConstantRangeCount = static_cast<uint32_t>(vulkanPushConstants.size()),
+            .pPushConstantRanges = vulkanPushConstants.data()
+        };
 
+        VkPipelineLayout pipelineLayout;
         if (vkCreatePipelineLayout(this->device, &pipelineInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create pipeline layout!");
         }

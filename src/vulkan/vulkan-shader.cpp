@@ -21,14 +21,15 @@ namespace RHI {
     }
 
     std::shared_ptr<ShaderModule> VulkanDevice::createShaderModule(ShaderModuleDescriptor desc) {
-        VkShaderModule shaderModule;
         std::vector<char> code = readFile(desc.filename);
 
-        VkShaderModuleCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = code.size();
-        createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
+        VkShaderModuleCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+            .codeSize = code.size(),
+            .pCode = reinterpret_cast<const uint32_t *>(code.data())
+        };
 
+        VkShaderModule shaderModule;
         if (vkCreateShaderModule(this->device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create shader module!");
         }

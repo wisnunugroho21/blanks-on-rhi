@@ -4,11 +4,12 @@
 
 namespace RHI {
     VkRect2D convertRect2DIntoVulkan(Rect2D rect) {
-        VkRect2D vulkanRect{};
-        vulkanRect.offset.x = rect.x;
-        vulkanRect.offset.y = rect.y;
-        vulkanRect.extent.width = rect.width;
-        vulkanRect.extent.height = rect.height;
+        VkRect2D vulkanRect{
+            .offset.x = rect.x,
+            .offset.y = rect.y,
+            .extent.width = rect.width,
+            .extent.height = rect.height
+        };
 
         return vulkanRect;
     }
@@ -61,21 +62,19 @@ namespace RHI {
     }
 
     VmaAllocationCreateFlags convertToAllocationFlag(BufferUsageFlags usage, BufferLocation location) {
-        VmaAllocationCreateFlags vulkanAllocationFlag{};
-
         if (usage & std::to_underlying(BufferUsage::eCopySrc) && location == BufferLocation::eHost) {
-            vulkanAllocationFlag = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+            return VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
         } 
         
         else if (usage & std::to_underlying(BufferUsage::eCopyDst) && location == BufferLocation::eHost) {
-            vulkanAllocationFlag = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+            return VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
         } 
         
         else if (location == BufferLocation::eDeviceLocal) {
-            vulkanAllocationFlag = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+            return VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
         }
 
-        return vulkanAllocationFlag;
+        return VmaAllocationCreateFlags{};
     }
 
     VkFormat convertTextureFormatIntoVulkan(TextureFormat format) {
@@ -270,8 +269,7 @@ namespace RHI {
     }
 
     VkImageAspectFlags convertAspectIntoVulkan(TextureAspect aspect) {
-        switch (aspect)
-        {
+        switch (aspect) {
             case TextureAspect::eColor : return VK_IMAGE_ASPECT_COLOR_BIT;
             case TextureAspect::eDepth : return VK_IMAGE_ASPECT_DEPTH_BIT;
             case TextureAspect::eStencil : return VK_IMAGE_ASPECT_STENCIL_BIT;
@@ -385,13 +383,14 @@ namespace RHI {
     }
 
     VkViewport convertViewportIntoVulkan(Viewport viewport) {
-        VkViewport vulkanViewPort{};
-        vulkanViewPort.x = viewport.x;
-        vulkanViewPort.y = viewport.y;
-        vulkanViewPort.width = viewport.width;
-        vulkanViewPort.height = viewport.height;
-        vulkanViewPort.maxDepth = viewport.maxDepth;
-        vulkanViewPort.minDepth = viewport.minDepth;
+        VkViewport vulkanViewPort{
+            .x = viewport.x,
+            .y = viewport.y,
+            .width = viewport.width,
+            .height = viewport.height,
+            .maxDepth = viewport.maxDepth,
+            .minDepth = viewport.minDepth
+        };
 
         return vulkanViewPort;
     }

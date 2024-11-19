@@ -2,24 +2,29 @@
 
 namespace RHI {
     std::shared_ptr<Sampler> VulkanDevice::createSampler(SamplerDescriptor desc) {
+        VkSamplerCreateInfo samplerInfo {
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .magFilter = convertFilterToVulkan(desc.magFilter),
+            .minFilter = convertFilterToVulkan(desc.minFilter),
+            .mipmapMode = convertMipmapFilterToVulkan(desc.mipmapFilter),
+            
+            .addressModeU = convertAddressModeToVulkan(desc.addressModeU),
+            .addressModeV = convertAddressModeToVulkan(desc.addressModeV),
+            .addressModeW = convertAddressModeToVulkan(desc.addressModeW),
+            
+            .compareEnable = desc.compare != CompareFunction::eNever ? VK_TRUE : VK_FALSE,
+            .compareOp = convertCompareOpToVulkan(desc.compare),
+
+            .anisotropyEnable = desc.maxAnisotropy > 1 ? VK_TRUE : VK_FALSE,
+            .maxAnisotropy = desc.maxAnisotropy,
+
+            .minLod = desc.lodMinClamp,
+            .maxLod = desc.lodMaxClamp,
+            
+            .borderColor = convertBorderColorToVulkan(desc.borderColor)
+        };
+
         VkSampler sampler;
-
-        VkSamplerCreateInfo samplerInfo;
-        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerInfo.magFilter = convertFilterToVulkan(desc.magFilter);
-        samplerInfo.minFilter = convertFilterToVulkan(desc.minFilter);
-        samplerInfo.mipmapMode = convertMipmapFilterToVulkan(desc.mipmapFilter);
-        samplerInfo.addressModeU = convertAddressModeToVulkan(desc.addressModeU);
-        samplerInfo.addressModeV = convertAddressModeToVulkan(desc.addressModeV);
-        samplerInfo.addressModeW = convertAddressModeToVulkan(desc.addressModeW);
-        samplerInfo.compareEnable = desc.compare != CompareFunction::eNever ? VK_TRUE : VK_FALSE;
-        samplerInfo.compareOp = convertCompareOpToVulkan(desc.compare);
-        samplerInfo.anisotropyEnable = desc.maxAnisotropy > 1 ? VK_TRUE : VK_FALSE;
-        samplerInfo.maxAnisotropy = desc.maxAnisotropy;
-        samplerInfo.minLod = desc.lodMinClamp;
-        samplerInfo.maxLod = desc.lodMaxClamp;
-        samplerInfo.borderColor = convertBorderColorToVulkan(desc.borderColor);
-
         if (vkCreateSampler(this->device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create sampler!");
         }

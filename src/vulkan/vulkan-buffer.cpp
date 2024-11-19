@@ -4,21 +4,21 @@
 
 namespace RHI {
     std::shared_ptr<Buffer> VulkanDevice::createBuffer(BufferDescriptor desc) {
+        VkBufferCreateInfo bufferInfo{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = desc.size,
+            .usage = convertBufferUsageIntoVulkan(desc.usage)
+        };
+
+        VmaAllocationCreateInfo allocInfo = {
+            .usage = convertBufferLocationIntoVulkan(desc.location),
+            .flags = convertToAllocationFlag(desc.usage, desc.location)
+        };
+
         VkBuffer buffer;
         VmaAllocation memoryAllocation;
 
-        VkBufferCreateInfo bufferInfo{};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = desc.size;
-        bufferInfo.usage = convertBufferUsageIntoVulkan(desc.usage);
-
-        VmaAllocationCreateInfo allocInfo = {};
-        allocInfo.usage = convertBufferLocationIntoVulkan(desc.location);
-        allocInfo.flags = convertToAllocationFlag(desc.usage, desc.location);
-
-        if (vmaCreateBuffer(this->memoryAllocator, &bufferInfo, &allocInfo, &buffer,
-                            &memoryAllocation, nullptr) != VK_SUCCESS) 
-        {
+        if (vmaCreateBuffer(this->memoryAllocator, &bufferInfo, &allocInfo, &buffer, &memoryAllocation, nullptr) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create buffer!");
         }
 

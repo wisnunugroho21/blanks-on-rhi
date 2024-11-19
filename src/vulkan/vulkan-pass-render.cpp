@@ -5,62 +5,66 @@ namespace RHI {
         std::vector<VkRenderingAttachmentInfo> colorRenderAttachInfos{};
 
         for (auto &&colorAttachment : desc.colorAttachments) {
-            VkRenderingAttachmentInfo colorRenderAttachInfo{};
+            VkRenderingAttachmentInfo colorRenderAttachInfo{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+                .imageView = dynamic_cast<VulkanTextureView*>(colorAttachment.targetView)->getNative(),
+                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 
-            colorRenderAttachInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-            colorRenderAttachInfo.imageView = dynamic_cast<VulkanTextureView*>(colorAttachment.targetView)->getNative();
-            colorRenderAttachInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                .loadOp = convertLoadOpIntoVulkan(colorAttachment.loadOp),
+                .storeOp = convertStoreOpIntoVulkan(colorAttachment.storeOp),
+
+                .clearValue.color.float32[0] = colorAttachment.clearValue.r,
+                .clearValue.color.float32[1] = colorAttachment.clearValue.g,
+                .clearValue.color.float32[2] = colorAttachment.clearValue.b,
+                .clearValue.color.float32[3] = colorAttachment.clearValue.a
+            };
 
             if (colorAttachment.resolveTargetView != nullptr) {
                 colorRenderAttachInfo.resolveImageView = dynamic_cast<VulkanTextureView*>(colorAttachment.resolveTargetView)->getNative();
                 colorRenderAttachInfo.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                 colorRenderAttachInfo.resolveMode = convertResolveModeIntoVulkan(colorAttachment.resolveMode);
             }
-
-            colorRenderAttachInfo.loadOp = convertLoadOpIntoVulkan(colorAttachment.loadOp);
-            colorRenderAttachInfo.storeOp = convertStoreOpIntoVulkan(colorAttachment.storeOp);
-
-            colorRenderAttachInfo.clearValue.color.float32[0] = colorAttachment.clearValue.r;
-            colorRenderAttachInfo.clearValue.color.float32[1] = colorAttachment.clearValue.g;
-            colorRenderAttachInfo.clearValue.color.float32[2] = colorAttachment.clearValue.b;
-            colorRenderAttachInfo.clearValue.color.float32[3] = colorAttachment.clearValue.a;
             
             colorRenderAttachInfos.emplace_back(colorRenderAttachInfo);
         }
 
-        VkRenderingAttachmentInfo depthRenderAttachInfo{};
+        VkRenderingAttachmentInfo depthRenderAttachInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView = dynamic_cast<VulkanTextureView*>(desc.depthAttachment.targetView)->getNative(),
+            .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
 
-        depthRenderAttachInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-        depthRenderAttachInfo.imageView = dynamic_cast<VulkanTextureView*>(desc.depthAttachment.targetView)->getNative();
-        depthRenderAttachInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            .loadOp = convertLoadOpIntoVulkan(desc.depthAttachment.loadOp),
+            .storeOp = convertStoreOpIntoVulkan(desc.depthAttachment.storeOp),
 
-        depthRenderAttachInfo.loadOp = convertLoadOpIntoVulkan(desc.depthAttachment.loadOp);
-        depthRenderAttachInfo.storeOp = convertStoreOpIntoVulkan(desc.depthAttachment.storeOp);
+            .clearValue.depthStencil.depth = desc.depthAttachment.clearValue
+        };
 
-        depthRenderAttachInfo.clearValue.depthStencil.depth = desc.depthAttachment.clearValue;
+        VkRenderingAttachmentInfo stencilRenderAttachInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView = dynamic_cast<VulkanTextureView*>(desc.stencilAttachment.targetView)->getNative(),
+            .imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
 
-        VkRenderingAttachmentInfo stencilRenderAttachInfo{};
+            .loadOp = convertLoadOpIntoVulkan(desc.stencilAttachment.loadOp),
+            .storeOp = convertStoreOpIntoVulkan(desc.stencilAttachment.storeOp),
 
-        stencilRenderAttachInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-        stencilRenderAttachInfo.imageView = dynamic_cast<VulkanTextureView*>(desc.stencilAttachment.targetView)->getNative();
-        stencilRenderAttachInfo.imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+            .clearValue.depthStencil.stencil = desc.stencilAttachment.clearValue
+        };
 
-        stencilRenderAttachInfo.loadOp = convertLoadOpIntoVulkan(desc.stencilAttachment.loadOp);
-        stencilRenderAttachInfo.storeOp = convertStoreOpIntoVulkan(desc.stencilAttachment.storeOp);
+        VkRenderingInfo renderingInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+            .renderArea.extent.height = desc.depthAttachment.targetView->getTexture()->getDesc().size.height,
+            .renderArea.extent.width = desc.depthAttachment.targetView->getTexture()->getDesc().size.width,
 
-        stencilRenderAttachInfo.clearValue.depthStencil.stencil = desc.stencilAttachment.clearValue;
+            .renderArea.offset.x = 0,
+            .renderArea.offset.y = 0,
+            .layerCount = desc.depthAttachment.targetView->getTexture()->getDesc().sliceLayersNum,
 
-        VkRenderingInfo renderingInfo{};
-        renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-        renderingInfo.renderArea.extent.height = desc.depthAttachment.targetView->getTexture()->getDesc().size.height;
-        renderingInfo.renderArea.extent.width = desc.depthAttachment.targetView->getTexture()->getDesc().size.width;
-        renderingInfo.renderArea.offset.x = 0;
-        renderingInfo.renderArea.offset.y = 0;
-        renderingInfo.layerCount = desc.depthAttachment.targetView->getTexture()->getDesc().sliceLayersNum;
-        renderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorRenderAttachInfos.size());
-        renderingInfo.pColorAttachments = colorRenderAttachInfos.data();
-        renderingInfo.pDepthAttachment = &depthRenderAttachInfo;
-        renderingInfo.pStencilAttachment = &stencilRenderAttachInfo;
+            .colorAttachmentCount = static_cast<uint32_t>(colorRenderAttachInfos.size()),
+            .pColorAttachments = colorRenderAttachInfos.data(),
+
+            .pDepthAttachment = &depthRenderAttachInfo,
+            .pStencilAttachment = &stencilRenderAttachInfo
+        };
         
         vkCmdBeginRendering(this->commandBuffer, &renderingInfo);
 
@@ -68,13 +72,14 @@ namespace RHI {
     }
     
     void VulkanRenderPassEncoder::setViewport(float x, float y, float width, float height, float minDepth, float maxDepth) {
-        VkViewport viewport{};
-        viewport.x = x;
-        viewport.y = y;
-        viewport.width = width;
-        viewport.height = height;
-        viewport.minDepth = minDepth;
-        viewport.maxDepth = maxDepth;
+        VkViewport viewport{
+            .x = x,
+            .y = y,
+            .width = width,
+            .height = height,
+            .minDepth = minDepth,
+            .maxDepth = maxDepth
+        };
 
         vkCmdSetViewport(
             dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative(),
@@ -118,11 +123,12 @@ namespace RHI {
     }
 
     void VulkanRenderPassEncoder::setScissorRect(Int32 x, Int32 y, Uint32 width, Uint32 height) {
-        VkRect2D rect2d{};
-        rect2d.extent.width = width;
-        rect2d.extent.height = height;
-        rect2d.offset.x = x;
-        rect2d.offset.y = y;
+        VkRect2D rect2d{
+            .extent.width = width,
+            .extent.height = height,
+            .offset.x = x,
+            .offset.y = y
+        };
 
         vkCmdSetScissor(
             dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative(),
@@ -194,11 +200,7 @@ namespace RHI {
     }
 
     void VulkanRenderPassEncoder::setBlendConstant(float r, float g, float b, float a) {
-        float blendConstants[4];
-        blendConstants[0] = r;
-        blendConstants[1] = g;
-        blendConstants[2] = b;
-        blendConstants[3] = a;
+        float blendConstants[4] { r, g, b, a };
 
         vkCmdSetBlendConstants(
             dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative(),

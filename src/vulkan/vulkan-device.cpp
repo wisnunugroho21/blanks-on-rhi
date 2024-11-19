@@ -125,8 +125,8 @@ namespace RHI {
         VkDebugUtilsMessengerEXT *pDebugMessenger
     ) {
         auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
-                instance,
-                "vkCreateDebugUtilsMessengerEXT"
+            instance,
+            "vkCreateDebugUtilsMessengerEXT"
         );
 
         if (func != nullptr) {
@@ -142,8 +142,8 @@ namespace RHI {
         const VkAllocationCallbacks *pAllocator
     ) {
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
-                instance, 
-                "vkDestroyDebugUtilsMessengerEXT"
+            instance, 
+            "vkDestroyDebugUtilsMessengerEXT"
         );
 
         if (func != nullptr) {
@@ -152,22 +152,20 @@ namespace RHI {
     }
 
     void createInstance(DeviceDescriptor desc, VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger) {
-        VkApplicationInfo appInfo{};
-        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName = "";
-        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_3;
+        VkApplicationInfo appInfo{
+            .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+            .pApplicationName = "",
+            .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+            .engineVersion = VK_MAKE_VERSION(1, 0, 0),
+            .apiVersion = VK_API_VERSION_1_3
+        };
 
-        VkInstanceCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        createInfo.pApplicationInfo = &appInfo;
+        VkInstanceCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+            .pApplicationInfo = &appInfo
+        };
 
         std::vector<const char *> extensions;
-
-        if (desc.enableDebug) {
-            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        }
 
 #ifdef __APPLE__
         createInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
@@ -177,6 +175,7 @@ namespace RHI {
         if (desc.enableDebug)
         {
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
             createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
             createInfo.ppEnabledExtensionNames = extensions.data();
 
@@ -241,17 +240,19 @@ namespace RHI {
     }
 
     void createLogicalDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice *device, std::vector<std::shared_ptr<Queue>>* queues) {
-        VkDeviceCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        VkDeviceCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO
+        };
 
         QueueFamilyIndices familyIndices = findQueueFamilies(physicalDevice);
         float queuePriority = 1.0f;
 
-        VkDeviceQueueCreateInfo graphicQueueCreateInfo{};
-        graphicQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        graphicQueueCreateInfo.queueFamilyIndex = familyIndices.graphicsFamily;
-        graphicQueueCreateInfo.queueCount = 1u;
-        graphicQueueCreateInfo.pQueuePriorities = &queuePriority;
+        VkDeviceQueueCreateInfo graphicQueueCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+            .queueFamilyIndex = familyIndices.graphicsFamily,
+            .queueCount = 1u,
+            .pQueuePriorities = &queuePriority
+        };
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos = {graphicQueueCreateInfo};
 
@@ -259,49 +260,54 @@ namespace RHI {
             && familyIndices.transferFamily != familyIndices.graphicsFamily
             && familyIndices.computeFamily != familyIndices.graphicsFamily) 
         {
-            VkDeviceQueueCreateInfo presentQueueCreateInfo{};
-            presentQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            presentQueueCreateInfo.queueFamilyIndex = familyIndices.computeFamily;
-            presentQueueCreateInfo.queueCount = familyIndices.computeCount;
-            presentQueueCreateInfo.pQueuePriorities = &queuePriority;
+            VkDeviceQueueCreateInfo presentQueueCreateInfo{
+                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .queueFamilyIndex = familyIndices.computeFamily,
+                .queueCount = familyIndices.computeCount,
+                .pQueuePriorities = &queuePriority
+            };
 
             queueCreateInfos.emplace_back(presentQueueCreateInfo);
 
-            VkDeviceQueueCreateInfo transferQueueCreateInfo{};
-            transferQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            transferQueueCreateInfo.queueFamilyIndex = familyIndices.transferFamily;
-            transferQueueCreateInfo.queueCount = familyIndices.transferCount;
-            transferQueueCreateInfo.pQueuePriorities = &queuePriority;
+            VkDeviceQueueCreateInfo transferQueueCreateInfo{
+                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .queueFamilyIndex = familyIndices.transferFamily,
+                .queueCount = familyIndices.transferCount,
+                .pQueuePriorities = &queuePriority
+            };
 
             queueCreateInfos.emplace_back(transferQueueCreateInfo);
         } else if (familyIndices.computeFamily == familyIndices.transferFamily
                    && familyIndices.computeFamily != familyIndices.graphicsFamily) 
         {
-            VkDeviceQueueCreateInfo queueCreateInfo{};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = familyIndices.computeFamily;
-            queueCreateInfo.queueCount = familyIndices.computeCount;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
+            VkDeviceQueueCreateInfo queueCreateInfo{
+                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .queueFamilyIndex = familyIndices.computeFamily,
+                .queueCount = familyIndices.computeCount,
+                .pQueuePriorities = &queuePriority
+            };
 
             queueCreateInfos.emplace_back(queueCreateInfo);
         } else if (familyIndices.computeFamily != familyIndices.transferFamily
                    && familyIndices.computeFamily == familyIndices.graphicsFamily) 
         {
-            VkDeviceQueueCreateInfo queueCreateInfo{};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = familyIndices.transferFamily;
-            queueCreateInfo.queueCount = familyIndices.transferCount;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
+            VkDeviceQueueCreateInfo queueCreateInfo{
+                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .queueFamilyIndex = familyIndices.transferFamily,
+                .queueCount = familyIndices.transferCount,
+                .pQueuePriorities = &queuePriority
+            };
 
             queueCreateInfos.emplace_back(queueCreateInfo);
         } else if (familyIndices.computeFamily != familyIndices.transferFamily
                    && familyIndices.transferFamily == familyIndices.graphicsFamily) 
         {
-            VkDeviceQueueCreateInfo queueCreateInfo{};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = familyIndices.computeFamily;
-            queueCreateInfo.queueCount = familyIndices.computeCount;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
+            VkDeviceQueueCreateInfo queueCreateInfo{
+                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .queueFamilyIndex = familyIndices.computeFamily,
+                .queueCount = familyIndices.computeCount,
+                .pQueuePriorities = &queuePriority
+            };
 
             queueCreateInfos.emplace_back(queueCreateInfo);
         }
@@ -310,7 +316,6 @@ namespace RHI {
         createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
         VkPhysicalDeviceFeatures deviceFeatures{};
-
         createInfo.pEnabledFeatures = &deviceFeatures;
 
         std::vector<const char *> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -364,11 +369,12 @@ namespace RHI {
     }
 
     void createMemoryAllocator(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator *memoryAllocator) {
-        VmaAllocatorCreateInfo allocatorCreateInfo = {};
-        allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
-        allocatorCreateInfo.physicalDevice = physicalDevice;
-        allocatorCreateInfo.device = device;
-        allocatorCreateInfo.instance = instance;
+        VmaAllocatorCreateInfo allocatorCreateInfo = {
+            .vulkanApiVersion = VK_API_VERSION_1_3,
+            .physicalDevice = physicalDevice,
+            .device = device,
+            .instance = instance
+        };
 
         if (vmaCreateAllocator(&allocatorCreateInfo, memoryAllocator) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create memory allocator!");
@@ -385,16 +391,18 @@ namespace RHI {
 
         VkDescriptorPoolSize descPoolSizes[4];
         for (uint8_t i = 0; i < 4; i++) {
-            VkDescriptorPoolSize descPoolSize;
-            descPoolSize.type = desiredDescriptor[i];
-            descPoolSize.descriptorCount = 100;
+            VkDescriptorPoolSize descPoolSize {
+                .type = desiredDescriptor[i],
+                .descriptorCount = 100
+            };
         }
 
-        VkDescriptorPoolCreateInfo descPoolInfo;
-        descPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        descPoolInfo.maxSets = 15;
-        descPoolInfo.poolSizeCount = 4;
-        descPoolInfo.pPoolSizes = descPoolSizes;
+        VkDescriptorPoolCreateInfo descPoolInfo {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .maxSets = 15,
+            .poolSizeCount = 4,
+            .pPoolSizes = descPoolSizes
+        };
 
         if (vkCreateDescriptorPool(device, &descPoolInfo, nullptr, descriptorPool) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create descriptor pool!");
