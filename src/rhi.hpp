@@ -1200,25 +1200,36 @@ namespace RHI {
         virtual void setBindGroup(std::vector<BindGroup*> bindGroup, std::vector<Uint32> dynamicOffsets = {}) = 0;
     };
 
-    // ===========================================================================================================================
-    // Compute Passes
-    // ===========================================================================================================================
-
-    struct ComputePassTimestampWrites {
+    struct ExecutionPassTimestampWrites {
         QuerySet* querySet;
         Uint32 beginningOfPassWriteIndex;
         Uint32 endOfPassWriteIndex;
     };
 
+    // ===========================================================================================================================
+    // Compute Passes
+    // ===========================================================================================================================
+
     struct ComputePassDescriptor {
-        ComputePassTimestampWrites timestampWrites;
+        ExecutionPassTimestampWrites timestampWrites;
+    };
+
+    struct ComputeState {
+        ComputePipeline* pipeline;
+        
+        std::vector<BindGroup*> bindGroups;
+        std::vector<Uint32> dynamicOffsets;
     };
 
     class ComputePassEncoder : public CommandsMixin, public BindingCommandsMixin {
-        ComputePassDescriptor desc;
-        CommandEncoder* commandEncoder;
+    public:
+        virtual ComputePassDescriptor getDesc() = 0;
+        virtual CommandEncoder* getCommandEncoder() = 0;
+        
+        virtual ComputeState getComputeState() = 0;
 
         virtual void setPipeline(ComputePipeline* pipeline) = 0;
+
         virtual void dispatchWorkgroups(Uint32 workgroupCountX, Uint32 workgroupCountY = 1, Uint32 workgroupCountZ = 1) = 0;
         virtual void dispatchWorkgroupsIndirect(Buffer* indirectBuffer, Uint64 indirectOffset) = 0;
 
@@ -1275,12 +1286,6 @@ namespace RHI {
         bool readOnly = false;
     };
 
-    struct RenderPassTimestampWrites {
-        QuerySet* querySet;
-        Uint32 beginningOfPassWriteIndex;
-        Uint32 endOfPassWriteIndex;
-    };
-
     class RenderCommandsMixin {
         virtual void setPipeline(RenderPipeline* pipeline) = 0;
 
@@ -1306,7 +1311,7 @@ namespace RHI {
         RenderPassStencilAttachment stencilAttachment;
         
         QuerySet* occlusionQuerySet;
-        RenderPassTimestampWrites timestampWrites;
+        ExecutionPassTimestampWrites timestampWrites;
 
         Uint64 maxDrawCount = 50000000;
     };
@@ -1337,7 +1342,7 @@ namespace RHI {
 
     class RenderPassEncoder : public CommandsMixin, public BindingCommandsMixin, public RenderCommandsMixin {
     public:
-        virtual RenderPipelineDescriptor getDesc() = 0;
+        virtual RenderPassDescriptor getDesc() = 0;
         virtual CommandEncoder* getCommandEncoder() = 0;
         
         virtual RenderState getRenderState() = 0;

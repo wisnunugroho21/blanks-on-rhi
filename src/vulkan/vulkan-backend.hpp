@@ -385,6 +385,40 @@ namespace RHI {
 
     class VulkanComputePassEncoder : public ComputePassEncoder {
     public:
+        VulkanComputePassEncoder(
+            ComputePassDescriptor desc,
+            CommandEncoder* c
+        )
+        : desc{desc},
+          commandEncoder{c}
+        {
+
+        } 
+
+        ComputePassDescriptor getDesc() override { return this->desc; }
+
+        CommandEncoder* getCommandEncoder() override { return this->commandEncoder; }
+
+        ComputeState getComputeState() override { return this->currentComputeState; }
+
+        CommandState getCommandState() override { return this->currentCommandState; }
+
+        void setPipeline(ComputePipeline* pipeline) override;
+
+        void setBindGroup(BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets = {}) override;
+        void setBindGroup(std::vector<BindGroup*>  bindGroup, std::vector<Uint32> dynamicOffsets = {}) override;
+
+        void dispatchWorkgroups(Uint32 workgroupCountX, Uint32 workgroupCountY = 1, Uint32 workgroupCountZ = 1) override;
+        void dispatchWorkgroupsIndirect(Buffer* indirectBuffer, Uint64 indirectOffset) override;
+
+        void end() override;
+
+    protected:
+        ComputePassDescriptor desc;
+        CommandEncoder* commandEncoder;
+
+        ComputeState currentComputeState;
+        CommandState currentCommandState;
         
     };
 
@@ -400,7 +434,12 @@ namespace RHI {
 
         }
 
+        RenderPassDescriptor getDesc() override { return this->desc; }
+
+        CommandEncoder* getCommandEncoder() override { return this->commandEncoder; }
+
         RenderState getRenderState() override { return this->currentRenderState; }
+
         CommandState getCommandState() override { return this->currentCommandState; }
 
         void setViewport(float x, float y, float width, float height, float minDepth, float maxDepth) override;
@@ -470,6 +509,7 @@ namespace RHI {
         }
 
         std::shared_ptr<RenderPassEncoder> beginRenderPass(RenderPassDescriptor desc) override;
+        std::shared_ptr<ComputePassEncoder> beginComputePass(ComputePassDescriptor desc) override;
 
         VkCommandBuffer getNative() { return this->commandBuffer; }
 

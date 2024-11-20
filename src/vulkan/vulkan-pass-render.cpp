@@ -261,10 +261,6 @@ namespace RHI {
         this->currentRenderState.stencilReference = reference;
     }
 
-    void VulkanRenderPassEncoder::end() {
-        vkCmdEndRendering(dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative());
-    }
-
     void VulkanRenderPassEncoder::setPipeline(RenderPipeline* pipeline) {
         vkCmdBindPipeline(
             dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative(),
@@ -343,7 +339,7 @@ namespace RHI {
         this->currentRenderState.indexOffset = offset;
     }
 
-    void VulkanRenderPassEncoder::setVertexBuffer(Buffer* buffer, Uint64 offset = 0) {
+    void VulkanRenderPassEncoder::setVertexBuffer(Buffer* buffer, Uint64 offset) {
         VkBuffer vulkanBuffer = dynamic_cast<VulkanBuffer*>(buffer)->getNative();
 
         vkCmdBindVertexBuffers(
@@ -424,7 +420,7 @@ namespace RHI {
         );
     }
 
-    void VulkanRenderPassEncoder::drawIndirectCount(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Buffer* countBuffer, Uint64 countOffset = 0) {
+    void VulkanRenderPassEncoder::drawIndirectCount(Buffer* indirectBuffer, Uint64 indirectOffset, Buffer* countBuffer, Uint64 countOffset) {
         vkCmdDrawIndirectCount(
             dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative(),
             dynamic_cast<VulkanBuffer*>(indirectBuffer)->getNative(),
@@ -446,7 +442,7 @@ namespace RHI {
         );
     }
 
-    void VulkanRenderPassEncoder::drawIndexedIndirectCount(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Buffer* countBuffer, Uint64 countOffset = 0) {
+    void VulkanRenderPassEncoder::drawIndexedIndirectCount(Buffer* indirectBuffer, Uint64 indirectOffset, Buffer* countBuffer, Uint64 countOffset) {
         vkCmdDrawIndexedIndirectCount(
             dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative(),
             dynamic_cast<VulkanBuffer*>(indirectBuffer)->getNative(),
@@ -456,5 +452,9 @@ namespace RHI {
             this->desc.maxDrawCount,
             sizeof(VkDrawIndexedIndirectCommand)
         );
+    }
+
+    void VulkanRenderPassEncoder::end() {
+        vkCmdEndRendering(dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative());
     }
 }
