@@ -259,18 +259,6 @@ namespace RHI {
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos = {queueCreateInfo};
 
-        VkCommandPoolCreateInfo commandPoolInfo{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-            .queueFamilyIndex = familyIndices.graphicsFamily
-        };
-
-        VkCommandPool commandPool;
-        if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create graphic command pool!"); 
-        }
-
-        (*commandPools)[QueueType::Graphic] = commandPool;
-
         if (familyIndices.computeFamily != familyIndices.transferFamily
             && familyIndices.transferFamily != familyIndices.graphicsFamily
             && familyIndices.computeFamily != familyIndices.graphicsFamily) 
@@ -280,32 +268,12 @@ namespace RHI {
 
             queueCreateInfos.emplace_back(queueCreateInfo);
 
-            // ----
-
-            commandPoolInfo.queueFamilyIndex = familyIndices.computeFamily;
-
-            if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-                throw std::runtime_error("Failed to create graphic command pool!"); 
-            }
-
-            (*commandPools)[QueueType::Compute] = commandPool;
-
             // ======
 
             queueCreateInfo.queueFamilyIndex = familyIndices.transferFamily;
             queueCreateInfo.queueCount = familyIndices.transferCount;
 
             queueCreateInfos.emplace_back(queueCreateInfo);
-
-            // ----
-
-            commandPoolInfo.queueFamilyIndex = familyIndices.transferFamily;
-
-            if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-                throw std::runtime_error("Failed to create graphic command pool!"); 
-            }
-
-            (*commandPools)[QueueType::Transfer] = commandPool;
         } else if (familyIndices.computeFamily == familyIndices.transferFamily
                    && familyIndices.computeFamily != familyIndices.graphicsFamily) 
         {
@@ -313,16 +281,6 @@ namespace RHI {
             queueCreateInfo.queueCount = familyIndices.computeCount;
 
             queueCreateInfos.emplace_back(queueCreateInfo);
-
-            // ----
-
-            commandPoolInfo.queueFamilyIndex = familyIndices.computeFamily;
-
-            if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-                throw std::runtime_error("Failed to create graphic command pool!"); 
-            }
-
-            (*commandPools)[QueueType::Compute] = commandPool;
         } else if (familyIndices.computeFamily != familyIndices.transferFamily
                    && familyIndices.computeFamily == familyIndices.graphicsFamily) 
         {
@@ -330,16 +288,6 @@ namespace RHI {
             queueCreateInfo.queueCount = familyIndices.transferCount;
 
             queueCreateInfos.emplace_back(queueCreateInfo);
-
-            // ----
-
-            commandPoolInfo.queueFamilyIndex = familyIndices.transferFamily;
-
-            if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-                throw std::runtime_error("Failed to create graphic command pool!"); 
-            }
-
-            (*commandPools)[QueueType::Transfer] = commandPool;
         } else if (familyIndices.computeFamily != familyIndices.transferFamily
                    && familyIndices.transferFamily == familyIndices.graphicsFamily) 
         {
@@ -347,16 +295,6 @@ namespace RHI {
             queueCreateInfo.queueCount = familyIndices.computeCount;
 
             queueCreateInfos.emplace_back(queueCreateInfo);
-
-            // ----
-
-            commandPoolInfo.queueFamilyIndex = familyIndices.computeFamily;
-
-            if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-                throw std::runtime_error("Failed to create graphic command pool!"); 
-            }
-
-            (*commandPools)[QueueType::Compute] = commandPool;
         }
 
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
@@ -411,6 +349,71 @@ namespace RHI {
                 .setIndex(i);
 
             (*queues)[QueueType::Transfer].push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue, familyIndices.transferFamily));
+        }
+
+        VkCommandPoolCreateInfo commandPoolInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .queueFamilyIndex = familyIndices.graphicsFamily
+        };
+
+        VkCommandPool commandPool;
+        if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create graphic command pool!"); 
+        }
+
+        (*commandPools)[QueueType::Graphic] = commandPool;
+
+        if (familyIndices.computeFamily != familyIndices.transferFamily
+            && familyIndices.transferFamily != familyIndices.graphicsFamily
+            && familyIndices.computeFamily != familyIndices.graphicsFamily) 
+        {
+            commandPoolInfo.queueFamilyIndex = familyIndices.computeFamily;
+
+            if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to create graphic command pool!"); 
+            }
+
+            (*commandPools)[QueueType::Compute] = commandPool;
+
+            // ======
+
+            commandPoolInfo.queueFamilyIndex = familyIndices.transferFamily;
+
+            if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to create graphic command pool!"); 
+            }
+
+            (*commandPools)[QueueType::Transfer] = commandPool;
+        } else if (familyIndices.computeFamily == familyIndices.transferFamily
+                   && familyIndices.computeFamily != familyIndices.graphicsFamily) 
+        {
+            commandPoolInfo.queueFamilyIndex = familyIndices.computeFamily;
+
+            if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to create graphic command pool!"); 
+            }
+
+            (*commandPools)[QueueType::Compute] = commandPool;
+        } else if (familyIndices.computeFamily != familyIndices.transferFamily
+                   && familyIndices.computeFamily == familyIndices.graphicsFamily) 
+        {
+            commandPoolInfo.queueFamilyIndex = familyIndices.transferFamily;
+
+            if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to create graphic command pool!"); 
+            }
+
+            (*commandPools)[QueueType::Transfer] = commandPool;
+        } else if (familyIndices.computeFamily != familyIndices.transferFamily
+                   && familyIndices.transferFamily == familyIndices.graphicsFamily) 
+        {
+            commandPoolInfo.queueFamilyIndex = familyIndices.computeFamily;
+
+            if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to create graphic command pool!"); 
+            }
+
+            (*commandPools)[QueueType::Compute] = commandPool;
         }
     }
 
