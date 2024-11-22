@@ -41,7 +41,7 @@ namespace RHI {
         this->currentComputeState.dynamicOffsets = dynamicOffsets;
     }
 
-    void VulkanComputePassEncoder::setBindGroup(std::vector<BindGroup*> bindGroups, std::vector<Uint32> dynamicOffsets = {}) {
+    void VulkanComputePassEncoder::setBindGroup(std::vector<BindGroup*> bindGroups, std::vector<Uint32> dynamicOffsets) {
         VulkanRenderPipeline* pipeline = dynamic_cast<VulkanRenderPipeline*>(this->currentComputeState.pipeline);
         
         std::vector<uint32_t> vulkanDynamicOffsets;

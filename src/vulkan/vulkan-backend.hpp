@@ -17,7 +17,8 @@ namespace RHI {
             VkDebugUtilsMessengerEXT dm,
             VkPhysicalDeviceProperties dp,
             VmaAllocator vma,
-            std::vector<std::shared_ptr<Queue>> q,
+            std::map<QueueType, std::vector<std::shared_ptr<Queue>>> q,
+            std::map<QueueType, VkCommandPool> c,
             VkDescriptorPool dsp            
         )
         : Device(desc),
@@ -28,6 +29,7 @@ namespace RHI {
           deviceProperties{dp},
           memoryAllocator{vma},
           queues{q},
+          commandPools{c},
           descriptorPool{dsp}
         {
 
@@ -56,8 +58,8 @@ namespace RHI {
         VkPhysicalDeviceProperties deviceProperties;
         VmaAllocator memoryAllocator;
 
-        std::vector<std::shared_ptr<Queue>> queues;
-        std::vector<VkCommandPool> commandPools;
+        std::map<QueueType, std::vector<std::shared_ptr<Queue>>> queues;
+        std::map<QueueType, VkCommandPool> commandPools;
         VkDescriptorPool descriptorPool;
     };
 
@@ -481,10 +483,10 @@ namespace RHI {
             Uint32 firstInstance = 0) override;
 
         void drawIndirect(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Uint64 drawCount = 1) override;
-        void drawIndirectCount(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Buffer* countBuffer, Uint64 countOffset = 0) override;
+        void drawIndirectCount(Buffer* indirectBuffer, Buffer* countBuffer, Uint64 indirectOffset = 0, Uint64 countOffset = 0) override;
 
         void drawIndexedIndirect(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Uint64 drawCount = 1) override;
-        void drawIndexedIndirectCount(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Buffer* countBuffer, Uint64 countOffset = 0) override;
+        void drawIndexedIndirectCount(Buffer* indirectBuffer, Buffer* countBuffer, Uint64 indirectOffset = 0, Uint64 countOffset = 0) override;
 
         void end() override;
 

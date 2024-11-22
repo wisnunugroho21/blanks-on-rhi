@@ -39,24 +39,24 @@ namespace RHI {
     // Basic Type
     // ===========================================================================================================================
     typedef const char* String;
-    typedef unsigned short Uint8;
-    typedef unsigned int Uint16;
-    typedef unsigned long Uint32;
-    typedef unsigned long long Uint64;
+    typedef uint8_t Uint8;
+    typedef uint16_t Uint16;
+    typedef uint32_t Uint32;
+    typedef uint64_t Uint64;
 
-    typedef int Int16;
-    typedef long Int32;
-    typedef long long Int64;
+    typedef int16_t Int16;
+    typedef int32_t Int32;
+    typedef int64_t Int64;
 
-    typedef float Float32;
-    typedef double Float64;
+    typedef float_t Float32;
+    typedef double_t Float64;
 
-    typedef unsigned long FlagsConstant;
-    typedef unsigned long TextureUsageFlags;
-    typedef unsigned long BufferUsageFlags;
-    typedef unsigned long ShaderStageFlags;
-    typedef unsigned long ColorWriteFlags;
-    typedef unsigned long ResolveModeFlags;
+    typedef uint32_t FlagsConstant;
+    typedef uint32_t TextureUsageFlags;
+    typedef uint32_t BufferUsageFlags;
+    typedef uint32_t ShaderStageFlags;
+    typedef uint32_t ColorWriteFlags;
+    typedef uint32_t ResolveModeFlags;
 
     struct Color {
         float r;
@@ -452,7 +452,7 @@ namespace RHI {
 
         Float32 lodMinClamp = 0;
         Float32 lodMaxClamp = 32;
-        Uint32 maxAnisotropy = 1;
+        float maxAnisotropy = 1.0f;
 
         constexpr SamplerDescriptor& setAddressModeU(AddressMode value) { this->addressModeU = value; return *this; }
         constexpr SamplerDescriptor& setAddressModeV(AddressMode value) { this->addressModeV = value; return *this; }
@@ -690,8 +690,8 @@ namespace RHI {
 
     struct ConstantLayout {
         ShaderStageFlags shaderStage;
-        Uint64 size = ULLONG_MAX;
-        Uint64 offset = 0;
+        Uint32 size = ULLONG_MAX;
+        Uint32 offset = 0;
 
         constexpr ConstantLayout& setShaderStage(ShaderStageFlags value) { this->shaderStage = value; return *this; }
         constexpr ConstantLayout& setSize(Uint64 value) { this->size = value; return *this; }
@@ -883,7 +883,7 @@ namespace RHI {
 
     struct VertexAttribute {
         VertexFormat format;
-        Uint64 offset;
+        Uint32 offset;
         Uint32 shaderLocation;
     };
 
@@ -922,7 +922,7 @@ namespace RHI {
     };
 
     struct VertexBufferLayout {
-        Uint64 arrayStride;
+        Uint32 arrayStride;
         VertexStepMode stepMode = VertexStepMode::eVertex;
         std::vector<VertexAttribute> attributes;
     };
@@ -1299,10 +1299,10 @@ namespace RHI {
             Uint32 firstInstance = 0) = 0;
 
         virtual void drawIndirect(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Uint64 drawCount = 1) = 0;
-        virtual void drawIndirectCount(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Buffer* countBuffer, Uint64 countOffset = 0) = 0;
+        virtual void drawIndirectCount(Buffer* indirectBuffer, Buffer* countBuffer, Uint64 indirectOffset = 0, Uint64 countOffset = 0) = 0;
 
         virtual void drawIndexedIndirect(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Uint64 drawCount = 1) = 0;
-        virtual void drawIndexedIndirectCount(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Buffer* countBuffer, Uint64 countOffset = 0) = 0;
+        virtual void drawIndexedIndirectCount(Buffer* indirectBuffer, Buffer* countBuffer, Uint64 indirectOffset = 0, Uint64 countOffset = 0) = 0;
     };
 
     struct RenderPassDescriptor {
@@ -1486,9 +1486,9 @@ namespace RHI {
 		virtual std::shared_ptr<ComputePipeline> createComputePipeline(ComputePipelineDescriptor desc) = 0;
 		virtual std::shared_ptr<RenderPipeline> createRenderPipeline(RenderPipelineDescriptor desc) = 0;
 
-		CommandEncoder createCommandEncoder();
+		// virtual std::shared_ptr<CommandEncoder> beginCommandEncoder();
 
-		QuerySet createQuerySet(QuerySetDescriptor desc);
+		// QuerySet createQuerySet(QuerySetDescriptor desc);
 
     protected:
         DeviceDescriptor desc;

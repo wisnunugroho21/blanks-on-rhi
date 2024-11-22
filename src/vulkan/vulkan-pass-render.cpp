@@ -4,20 +4,19 @@ namespace RHI {
     std::shared_ptr<RenderPassEncoder> VulkanCommandEncoder::beginRenderPass(RenderPassDescriptor desc) {
         std::vector<VkRenderingAttachmentInfo> colorRenderAttachInfos{};
 
+        VkRenderingAttachmentInfo colorRenderAttachInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        };
+
         for (auto &&colorAttachment : desc.colorAttachments) {
-            VkRenderingAttachmentInfo colorRenderAttachInfo{
-                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-                .imageView = dynamic_cast<VulkanTextureView*>(colorAttachment.targetView)->getNative(),
-                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-
-                .loadOp = convertLoadOpIntoVulkan(colorAttachment.loadOp),
-                .storeOp = convertStoreOpIntoVulkan(colorAttachment.storeOp),
-
-                .clearValue.color.float32[0] = colorAttachment.clearValue.r,
-                .clearValue.color.float32[1] = colorAttachment.clearValue.g,
-                .clearValue.color.float32[2] = colorAttachment.clearValue.b,
-                .clearValue.color.float32[3] = colorAttachment.clearValue.a
-            };
+            colorRenderAttachInfo.imageView = dynamic_cast<VulkanTextureView*>(colorAttachment.targetView)->getNative();
+            colorRenderAttachInfo.loadOp = convertLoadOpIntoVulkan(colorAttachment.loadOp);
+            colorRenderAttachInfo.storeOp = convertStoreOpIntoVulkan(colorAttachment.storeOp);
+            colorRenderAttachInfo.clearValue.color.float32[0] = colorAttachment.clearValue.r;
+            colorRenderAttachInfo.clearValue.color.float32[1] = colorAttachment.clearValue.g;
+            colorRenderAttachInfo.clearValue.color.float32[2] = colorAttachment.clearValue.b;
+            colorRenderAttachInfo.clearValue.color.float32[3] = colorAttachment.clearValue.a;
 
             if (colorAttachment.resolveTargetView != nullptr) {
                 colorRenderAttachInfo.resolveImageView = dynamic_cast<VulkanTextureView*>(colorAttachment.resolveTargetView)->getNative();
@@ -297,7 +296,7 @@ namespace RHI {
         this->currentRenderState.dynamicOffsets = dynamicOffsets;
     }
 
-    void VulkanRenderPassEncoder::setBindGroup(std::vector<BindGroup*> bindGroups, std::vector<Uint32> dynamicOffsets = {}) {
+    void VulkanRenderPassEncoder::setBindGroup(std::vector<BindGroup*> bindGroups, std::vector<Uint32> dynamicOffsets) {
         VulkanRenderPipeline* pipeline = dynamic_cast<VulkanRenderPipeline*>(this->currentRenderState.pipeline);
         
         std::vector<uint32_t> vulkanDynamicOffsets;
@@ -357,7 +356,7 @@ namespace RHI {
         this->currentRenderState.vertexOffsets.emplace_back(offset);
     }
 
-    void VulkanRenderPassEncoder::setVertexBuffer(std::vector<Buffer*> buffers, std::vector<Uint64> offsets = {}) {
+    void VulkanRenderPassEncoder::setVertexBuffer(std::vector<Buffer*> buffers, std::vector<Uint64> offsets) {
         std::vector<uint64_t> vulkanOffsets;
 
         if (offsets.empty()) {
@@ -420,7 +419,7 @@ namespace RHI {
         );
     }
 
-    void VulkanRenderPassEncoder::drawIndirectCount(Buffer* indirectBuffer, Uint64 indirectOffset, Buffer* countBuffer, Uint64 countOffset) {
+    void VulkanRenderPassEncoder::drawIndirectCount(Buffer* indirectBuffer, Buffer* countBuffer, Uint64 indirectOffset, Uint64 countOffset) {
         vkCmdDrawIndirectCount(
             dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative(),
             dynamic_cast<VulkanBuffer*>(indirectBuffer)->getNative(),
@@ -442,7 +441,7 @@ namespace RHI {
         );
     }
 
-    void VulkanRenderPassEncoder::drawIndexedIndirectCount(Buffer* indirectBuffer, Uint64 indirectOffset, Buffer* countBuffer, Uint64 countOffset) {
+    void VulkanRenderPassEncoder::drawIndexedIndirectCount(Buffer* indirectBuffer, Buffer* countBuffer, Uint64 indirectOffset, Uint64 countOffset) {
         vkCmdDrawIndexedIndirectCount(
             dynamic_cast<VulkanCommandEncoder*>(this->commandEncoder)->getNative(),
             dynamic_cast<VulkanBuffer*>(indirectBuffer)->getNative(),

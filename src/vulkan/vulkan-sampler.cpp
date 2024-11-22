@@ -15,7 +15,7 @@ namespace RHI {
             .compareEnable = desc.compare != CompareFunction::eNever ? VK_TRUE : VK_FALSE,
             .compareOp = convertCompareOpToVulkan(desc.compare),
 
-            .anisotropyEnable = desc.maxAnisotropy > 1 ? VK_TRUE : VK_FALSE,
+            .anisotropyEnable = desc.maxAnisotropy > 1.0f ? VK_TRUE : VK_FALSE,
             .maxAnisotropy = desc.maxAnisotropy,
 
             .minLod = desc.lodMinClamp,
