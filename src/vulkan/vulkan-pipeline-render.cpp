@@ -1,8 +1,5 @@
 #include "vulkan-backend.hpp"
 
-#include <array>
-#include <utility>
-
 namespace RHI {
     std::shared_ptr<RenderPipeline> VulkanDevice::createRenderPipeline(RenderPipelineDescriptor desc) {
         std::array<VkPipelineShaderStageCreateInfo, 2> shaderStageInfos{

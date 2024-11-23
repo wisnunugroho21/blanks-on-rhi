@@ -49,6 +49,8 @@ namespace RHI {
         std::shared_ptr<ComputePipeline> createComputePipeline(ComputePipelineDescriptor desc) override;
         std::shared_ptr<RenderPipeline> createRenderPipeline(RenderPipelineDescriptor desc) override;
         
+        std::shared_ptr<CommandEncoder> beginCommandEncoder() override;
+        
     private:
         VkInstance instance;
         VkPhysicalDevice physicalDevice;

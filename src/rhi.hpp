@@ -1486,7 +1486,7 @@ namespace RHI {
 		virtual std::shared_ptr<ComputePipeline> createComputePipeline(ComputePipelineDescriptor desc) = 0;
 		virtual std::shared_ptr<RenderPipeline> createRenderPipeline(RenderPipelineDescriptor desc) = 0;
 
-		// virtual std::shared_ptr<CommandEncoder> beginCommandEncoder();
+		virtual std::shared_ptr<CommandEncoder> beginCommandEncoder() = 0;
 
 		// QuerySet createQuerySet(QuerySetDescriptor desc);
 

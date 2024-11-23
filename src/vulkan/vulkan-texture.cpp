@@ -1,7 +1,5 @@
 #include "vulkan-backend.hpp"
 
-#include <utility>
-
 namespace RHI {
     std::shared_ptr<Texture> VulkanDevice::createTexture(TextureDescriptor desc) {
         VkImageCreateInfo imageInfo{
