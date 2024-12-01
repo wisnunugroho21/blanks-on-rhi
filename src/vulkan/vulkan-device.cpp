@@ -322,9 +322,10 @@ namespace RHI {
             VkQueue vulkanQueue;
             vkGetDeviceQueue(*device, familyIndices.graphicsFamily, i, &vulkanQueue);
 
-            QueueDescriptor desc = QueueDescriptor()
-                .setType(QueueType::Graphic)
-                .setIndex(i);
+            QueueDescriptor desc{
+                .type = QueueType::Graphic,
+                .index = i
+            };
 
             (*queues)[QueueType::Graphic].push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue, familyIndices.graphicsFamily));
         }
@@ -333,9 +334,10 @@ namespace RHI {
             VkQueue vulkanQueue;
             vkGetDeviceQueue(*device, familyIndices.computeFamily, i, &vulkanQueue);
 
-            QueueDescriptor desc = QueueDescriptor()
-                .setType(QueueType::Compute)
-                .setIndex(i);
+            QueueDescriptor desc{
+                .type = QueueType::Compute,
+                .index = i
+            };
 
             (*queues)[QueueType::Compute].push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue, familyIndices.computeFamily));
         }
@@ -344,9 +346,10 @@ namespace RHI {
             VkQueue vulkanQueue;
             vkGetDeviceQueue(*device, familyIndices.transferFamily, i, &vulkanQueue);
 
-            QueueDescriptor desc = QueueDescriptor()
-                .setType(QueueType::Transfer)
-                .setIndex(i);
+            QueueDescriptor desc{
+                .type = QueueType::Transfer,
+                .index = i
+            };
 
             (*queues)[QueueType::Transfer].push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue, familyIndices.transferFamily));
         }
@@ -370,7 +373,7 @@ namespace RHI {
             commandPoolInfo.queueFamilyIndex = familyIndices.computeFamily;
 
             if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-                throw std::runtime_error("Failed to create graphic command pool!"); 
+                throw std::runtime_error("Failed to create compute command pool!"); 
             }
 
             (*commandPools)[QueueType::Compute] = commandPool;
@@ -380,7 +383,7 @@ namespace RHI {
             commandPoolInfo.queueFamilyIndex = familyIndices.transferFamily;
 
             if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-                throw std::runtime_error("Failed to create graphic command pool!"); 
+                throw std::runtime_error("Failed to create transfer command pool!"); 
             }
 
             (*commandPools)[QueueType::Transfer] = commandPool;
@@ -390,7 +393,7 @@ namespace RHI {
             commandPoolInfo.queueFamilyIndex = familyIndices.computeFamily;
 
             if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-                throw std::runtime_error("Failed to create graphic command pool!"); 
+                throw std::runtime_error("Failed to create compute command pool!"); 
             }
 
             (*commandPools)[QueueType::Compute] = commandPool;
@@ -400,7 +403,7 @@ namespace RHI {
             commandPoolInfo.queueFamilyIndex = familyIndices.transferFamily;
 
             if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-                throw std::runtime_error("Failed to create graphic command pool!"); 
+                throw std::runtime_error("Failed to create transfer command pool!"); 
             }
 
             (*commandPools)[QueueType::Transfer] = commandPool;
@@ -410,7 +413,7 @@ namespace RHI {
             commandPoolInfo.queueFamilyIndex = familyIndices.computeFamily;
 
             if (vkCreateCommandPool(*device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-                throw std::runtime_error("Failed to create graphic command pool!"); 
+                throw std::runtime_error("Failed to create compute command pool!"); 
             }
 
             (*commandPools)[QueueType::Compute] = commandPool;

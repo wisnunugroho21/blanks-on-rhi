@@ -49,7 +49,7 @@ namespace RHI {
         std::shared_ptr<ComputePipeline> createComputePipeline(ComputePipelineDescriptor desc) override;
         std::shared_ptr<RenderPipeline> createRenderPipeline(RenderPipelineDescriptor desc) override;
         
-        std::shared_ptr<CommandEncoder> beginCommandEncoder() override;
+        std::shared_ptr<CommandEncoder> beginCommandEncoder(CommandEncoderDescriptor desc) override;
         
     private:
         VkInstance instance;
@@ -387,6 +387,95 @@ namespace RHI {
         VkPipeline pipeline;
     };
 
+    class VulkanCommandEncoder : public CommandEncoder {
+    public:
+        VulkanCommandEncoder(
+            CommandEncoderDescriptor desc,
+            VulkanDevice* d,
+            VkCommandBuffer c
+        )
+        : 
+          desc{desc},
+          device{d},
+          commandBuffer{c}
+        {
+
+        }
+
+        ~VulkanCommandEncoder();
+
+        CommandEncoderDescriptor getDesc() override { return this->desc; }
+
+        CommandState getCommandState() override { return this->currentCommandState; }
+
+        std::shared_ptr<RenderPassEncoder> beginRenderPass(RenderPassDescriptor desc) override;
+        std::shared_ptr<ComputePassEncoder> beginComputePass(ComputePassDescriptor desc) override;
+
+        void activatePipelineBarrier(
+            ShaderStage srcStage,
+            ShaderStage dstStage
+        )  override;
+
+        void activateBufferBarrier(
+            ShaderStage srcStage,
+            ShaderStage dstStage,
+            BufferBarrier desc
+        )  override;
+
+        void activateImageBarrier(
+            ShaderStage srcStage,
+            ShaderStage dstStage,
+            ImageBarrier desc
+        )  override;
+
+        void copyBufferToBuffer(
+            Buffer* source,
+            Uint64 sourceOffset,
+            Buffer* destination,
+            Uint64 destinationOffset,
+            Uint64 size) override;
+
+        void copyBufferToTexture(
+            ImageCopyBuffer source,
+            ImageCopyTexture destination,
+            Extent3D copySize) override;
+
+        void copyTextureToBuffer(
+            ImageCopyTexture source,
+            ImageCopyBuffer destination,
+            Extent3D copySize) override;
+
+        void copyTextureToTexture(
+            ImageCopyTexture source,
+            ImageCopyTexture destination,
+            Extent3D copySize) override;
+
+        void clearBuffer(
+            Buffer* buffer,
+            Uint64 size = ULLONG_MAX,
+            Uint64 offset = 0
+        ) override;
+
+        void resolveQuerySet(
+            QuerySet querySet,
+            Uint32 firstQuery,
+            Uint32 queryCount,
+            Buffer* destination,
+            Uint64 destinationOffset) override;
+
+        void finish() override;
+
+        VkCommandBuffer getNative() { return this->commandBuffer; }
+
+    protected:
+        CommandEncoderDescriptor desc;
+
+    private:
+        VulkanDevice* device;
+        VkCommandBuffer commandBuffer;
+        CommandState currentCommandState;
+    };
+
     class VulkanComputePassEncoder : public ComputePassEncoder {
     public:
         VulkanComputePassEncoder(
@@ -498,28 +587,6 @@ namespace RHI {
 
         RenderState currentRenderState;
         CommandState currentCommandState;
-    };
-
-    class VulkanCommandEncoder : public CommandEncoder {
-    public:
-        VulkanCommandEncoder(
-            VulkanDevice* d,
-            VkCommandBuffer c
-        )
-        : device{d},
-          commandBuffer{c}
-        {
-
-        }
-
-        std::shared_ptr<RenderPassEncoder> beginRenderPass(RenderPassDescriptor desc) override;
-        std::shared_ptr<ComputePassEncoder> beginComputePass(ComputePassDescriptor desc) override;
-
-        VkCommandBuffer getNative() { return this->commandBuffer; }
-
-    protected:
-        VulkanDevice* device;
-        VkCommandBuffer commandBuffer;
     };
 
     class VulkanQueue : public Queue {

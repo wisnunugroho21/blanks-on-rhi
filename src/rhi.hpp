@@ -35,6 +35,8 @@ namespace RHI {
     struct RenderPassDescriptor;
     struct ComputePassDescriptor;
 
+    enum class QueueType : uint8_t;
+
     // ===========================================================================================================================
     // Basic Type
     // ===========================================================================================================================
@@ -99,10 +101,6 @@ namespace RHI {
         Uint32 width;
         Uint32 height = 1;
         Uint32 depth = 1;
-
-		constexpr Extent3D& setWidth(Uint32 value) { this->width = value; return *this; }
-		constexpr Extent3D& setHeight(Uint32 value) { this->height = value; return *this; }
-		constexpr Extent3D& setDepth(Uint32 value) { this->depth = value; return *this; }
     };
 
     struct Rect2D {
@@ -110,11 +108,6 @@ namespace RHI {
         Int32 y;
         Uint32 width;
         Uint32 height;
-
-        constexpr Rect2D& setX(Int32 value) { this->x = value; return *this; }
-        constexpr Rect2D& setY(Int32 value) { this->y = value; return *this; }
-        constexpr Rect2D& setWidth(Uint32 value) { this->width = value; return *this; }
-        constexpr Rect2D& setHeight(Uint32 value) { this->height = value; return *this; }
     };
 
     // ===========================================================================================================================
@@ -146,10 +139,6 @@ namespace RHI {
         Uint64 size;
         BufferUsageFlags usage;
         BufferLocation location;
-
-		constexpr BufferDescriptor& setSize(Uint64 value) { this->size = value; return *this; }
-		constexpr BufferDescriptor& setUsage(BufferUsageFlags value) { this->usage = value; return *this; }
-		constexpr BufferDescriptor& setLocation(BufferLocation value) { this->location = value; return *this; }
     };
 
     class Buffer {
@@ -349,15 +338,6 @@ namespace RHI {
 
         TextureDimension dimension = TextureDimension::e2D;
         TextureState initialState = TextureState::eUndefined;
-
-        constexpr TextureDescriptor& setSize(Extent3D value) { this->size = value; return *this; }
-        constexpr TextureDescriptor& setFormat(TextureFormat value) { this->format = value; return *this; }
-        constexpr TextureDescriptor& setUsage(TextureUsageFlags value) { this->usage = value; return *this; }
-        constexpr TextureDescriptor& setSliceLayersNum(Uint32 value) { this->sliceLayersNum = value; return *this; }
-        constexpr TextureDescriptor& setMipLevelCount(Uint32 value) { this->mipLevelCount = value; return *this; }
-        constexpr TextureDescriptor& setSampleCount(Uint32 value) { this->sampleCount = value; return *this; }
-        constexpr TextureDescriptor& setDimension(TextureDimension value) { this->dimension = value; return *this; }
-        constexpr TextureDescriptor& setInitialState(TextureState value) { this->initialState = value; return *this; }
     };
 
     struct TextureSubresource {
@@ -368,12 +348,6 @@ namespace RHI {
 
         Uint32 baseArrayLayer = 0;
         Uint32 arrayLayerCount = 1;
-
-        constexpr TextureSubresource& setAspect(TextureAspect value) { this->aspect = value; return *this; }
-        constexpr TextureSubresource& setBaseMipLevel(Uint32 value) { this->baseMipLevel = value; return *this; }
-        constexpr TextureSubresource& setMipLevelCount(Uint32 value) { this->mipLevelCount = value; return *this; }
-        constexpr TextureSubresource& setBaseArrayLayer(Uint32 value) { this->baseArrayLayer = value; return *this; }
-        constexpr TextureSubresource& setArrayLayerCount(Uint32 value) { this->arrayLayerCount = value; return *this; }
     };
 
     struct TextureViewDescriptor {
@@ -381,10 +355,6 @@ namespace RHI {
         TextureFormat format;
 
         TextureViewDimension dimension = TextureViewDimension::e2D;
-
-        constexpr TextureViewDescriptor& setSubresource(TextureSubresource value) { this->subresource = value; return *this; }
-        constexpr TextureViewDescriptor& setFormat(TextureFormat value) { this->format = value; return *this; }
-        constexpr TextureViewDescriptor& setDimension(TextureViewDimension value) { this->dimension = value; return *this; }
     };
 
     class Texture {
@@ -453,18 +423,6 @@ namespace RHI {
         Float32 lodMinClamp = 0;
         Float32 lodMaxClamp = 32;
         float maxAnisotropy = 1.0f;
-
-        constexpr SamplerDescriptor& setAddressModeU(AddressMode value) { this->addressModeU = value; return *this; }
-        constexpr SamplerDescriptor& setAddressModeV(AddressMode value) { this->addressModeV = value; return *this; }
-        constexpr SamplerDescriptor& setAddressModeW(AddressMode value) { this->addressModeW = value; return *this; }
-        constexpr SamplerDescriptor& setMagFilter(FilterMode value) { this->magFilter = value; return *this; }
-        constexpr SamplerDescriptor& setMinFilter(FilterMode value) { this->minFilter = value; return *this; }
-        constexpr SamplerDescriptor& setMipmapFilter(MipmapFilterMode value) { this->mipmapFilter = value; return *this; }
-        constexpr SamplerDescriptor& setCompare(CompareFunction value) { this->compare = value; return *this; }
-        constexpr SamplerDescriptor& setBorderColor(BorderColor value) { this->borderColor = value; return *this; }
-        constexpr SamplerDescriptor& setLodMinClamp(Float32 value) { this->lodMinClamp = value; return *this; }
-        constexpr SamplerDescriptor& setLodMaxClamp(Float32 value) { this->lodMaxClamp = value; return *this; }
-        constexpr SamplerDescriptor& setMaxAnisotropy(Uint32 value) { this->maxAnisotropy = value; return *this; }
     };
 
     class Sampler {
@@ -503,35 +461,10 @@ namespace RHI {
         BindingType type;
 
         Uint32 bindCount = 1;
-
-        constexpr BindGroupLayoutEntry& setBinding(Uint32 value) { this->binding = value; return *this; }
-        constexpr BindGroupLayoutEntry& setShaderStage(ShaderStageFlags value) { this->shaderStage = value; return *this; }
-        constexpr BindGroupLayoutEntry& setType(BindingType value) { this->type = value; return *this; }
-        constexpr BindGroupLayoutEntry& setBindCount(Uint32 value) { this->bindCount = value; return *this; }
     };
 
     struct BindGroupLayoutDescriptor {
-        std::map<Uint32, BindGroupLayoutEntry> entries;
-
-        constexpr BindGroupLayoutDescriptor& setEntries(const std::vector<BindGroupLayoutEntry>& value) { 
-            for (auto &&item : value) {
-                this->entries[item.binding] = item;
-            }
-             
-            return *this;
-        }
-
-        constexpr BindGroupLayoutDescriptor& addEntry(BindGroupLayoutEntry item) { this->entries[item.binding] = item; return *this; }
-        constexpr BindGroupLayoutDescriptor& addEntry(Uint32 binding, ShaderStageFlags shaderStage, BindingType type, Uint32 bindCount = 1) { 
-            this->entries[binding] = 
-                BindGroupLayoutEntry()
-                    .setBinding(binding)
-                    .setShaderStage(shaderStage)
-                    .setType(type)
-                    .setBindCount(bindCount);
-
-            return *this; 
-        }
+        std::vector<BindGroupLayoutEntry> entries;
     };
 
     class BindGroupLayout {
@@ -547,177 +480,45 @@ namespace RHI {
         Buffer* buffer;
         Uint64 size = ULLONG_MAX;
         Uint64 offset = 0;
-
-        constexpr BufferBindGroupItem& setBuffer(Buffer* value) { this->buffer = value; return *this; }
-        constexpr BufferBindGroupItem& setSize(Uint64 value) { this->size = value; return *this; }
-        constexpr BufferBindGroupItem& setOffset(Uint64 value) { this->offset = value; return *this; }
     };
 
     struct TextureBindGroupItem {
         TextureView* textureView;
-
-        constexpr TextureBindGroupItem& setTextureView(TextureView* value) { this->textureView = value; return *this; }
     };
 
     struct SamplerBindGroupItem {
         Sampler* sampler;
-
-        constexpr SamplerBindGroupItem& setSampler(Sampler* value) { this->sampler = value; return *this; }
     };
 
     struct BufferBindGroupEntry : BindGroupEntry {
         std::vector<BufferBindGroupItem> groupItems;
-
-        constexpr BufferBindGroupEntry& setBinding(Uint32 value) { this->binding = value; return *this; }
-
-        constexpr BufferBindGroupEntry& setEntries(const std::vector<BufferBindGroupItem>& value) { this->groupItems = value; return *this; }
-
-        constexpr BufferBindGroupEntry& addEntry(BufferBindGroupItem item) { this->groupItems.emplace_back(item); return *this; }
-
-        constexpr BufferBindGroupEntry& addEntry(Buffer* buffer, Uint64 size = ULLONG_MAX, Uint64 offset = 0) {
-            this->groupItems.emplace_back(
-                BufferBindGroupItem()
-                    .setBuffer(buffer)
-                    .setSize(size)
-                    .setOffset(offset)
-            );
-
-            return *this;
-        }
     };
 
     struct TextureBindGroupEntry : BindGroupEntry {
         std::vector<TextureBindGroupItem> groupItems;
-
-        constexpr TextureBindGroupEntry& setBinding(Uint32 value) { this->binding = value; return *this; }
-
-        constexpr TextureBindGroupEntry& setEntries(const std::vector<TextureBindGroupItem>& value) { this->groupItems = value; return *this; }
-       
-        constexpr TextureBindGroupEntry& addEntry(TextureBindGroupItem item) { this->groupItems.emplace_back(item); return *this; }
-
-        constexpr TextureBindGroupEntry& addEntry(TextureView* textureView) { 
-            this->groupItems.emplace_back(
-                TextureBindGroupItem()
-                    .setTextureView(textureView)
-            );
-
-            return *this; 
-        }
     };
 
     struct SamplerBindGroupEntry : BindGroupEntry {
         std::vector<SamplerBindGroupItem> groupItems;
-
-        constexpr SamplerBindGroupEntry& setBinding(Uint32 value) { this->binding = value; return *this; }
-
-        constexpr SamplerBindGroupEntry& setEntries(const std::vector<SamplerBindGroupItem>& value) { this->groupItems = value; return *this; }
-       
-        constexpr SamplerBindGroupEntry& addEntry(SamplerBindGroupItem item) { this->groupItems.emplace_back(item); return *this; }
-
-        constexpr SamplerBindGroupEntry& addEntry(Sampler* sampler) {
-            this->groupItems.emplace_back(
-                SamplerBindGroupItem()
-                    .setSampler(sampler)
-            );
-
-            return *this;
-        }
     };
 
     struct BindGroupDescriptor {
         BindGroupLayout* layout;
 
-        std::map<Uint32, BufferBindGroupEntry> bufferEntries;
-        std::map<Uint32, TextureBindGroupEntry> textureEntries;
-        std::map<Uint32, SamplerBindGroupEntry> samplerEntries;
-
-        constexpr BindGroupDescriptor& setLayout(BindGroupLayout* value) { this->layout = value; return *this; }
-        
-        constexpr BindGroupDescriptor& addBuffer(Uint32 binding, Buffer* buffer, Uint64 size = ULLONG_MAX, Uint64 offset = 0) {
-            BufferBindGroupEntry groupEntry = BufferBindGroupEntry()
-                .setBinding(binding)
-                .addEntry(buffer, size, offset);
-
-            this->bufferEntries[binding] = groupEntry;
-            return *this;
-        }
-
-        constexpr BindGroupDescriptor& addBuffer(Uint32 binding, const std::vector<BufferBindGroupItem>& entries) {
-            BufferBindGroupEntry groupEntry = BufferBindGroupEntry()
-                .setBinding(binding)
-                .setEntries(entries);
-
-            this->bufferEntries[binding] = groupEntry;
-            return *this;
-        }
-
-        constexpr BindGroupDescriptor& addTextureView(Uint32 binding, TextureView* textureView) {
-            TextureBindGroupEntry groupEntry = TextureBindGroupEntry()
-                .setBinding(binding)
-                .addEntry(textureView);
-
-            this->textureEntries[binding] = groupEntry;
-            return *this;
-        }
-
-        constexpr BindGroupDescriptor& addTextureView(Uint32 binding, const std::vector<TextureBindGroupItem>& entries) {
-            TextureBindGroupEntry groupEntry = TextureBindGroupEntry()
-                .setBinding(binding)
-                .setEntries(entries);
-
-            this->textureEntries[binding] = groupEntry;
-            return *this;
-        }
-
-        constexpr BindGroupDescriptor& addSampler(Uint32 binding, Sampler* sampler) {
-            SamplerBindGroupEntry groupEntry = SamplerBindGroupEntry()
-                .setBinding(binding)
-                .addEntry(sampler);
-
-            this->samplerEntries[binding] = groupEntry;
-            return *this;
-        }
-
-        constexpr BindGroupDescriptor& addSampler(Uint32 binding, const std::vector<SamplerBindGroupItem>& entries) {
-            SamplerBindGroupEntry groupEntry = SamplerBindGroupEntry()
-                .setBinding(binding)
-                .setEntries(entries);
-
-            this->samplerEntries[binding] = groupEntry;
-            return *this;
-        }
+        std::vector<BufferBindGroupEntry> bufferEntries;
+        std::vector<TextureBindGroupEntry> textureEntries;
+        std::vector<SamplerBindGroupEntry> samplerEntries;
     };
 
     struct ConstantLayout {
         ShaderStageFlags shaderStage;
         Uint32 size = ULLONG_MAX;
         Uint32 offset = 0;
-
-        constexpr ConstantLayout& setShaderStage(ShaderStageFlags value) { this->shaderStage = value; return *this; }
-        constexpr ConstantLayout& setSize(Uint64 value) { this->size = value; return *this; }
-        constexpr ConstantLayout& setOffset(Uint64 value) { this->offset = value; return *this; }
     };
 
     struct PipelineLayoutDescriptor {
         std::vector<BindGroupLayout*> bindGroupLayouts;
         std::vector<ConstantLayout> constantLayouts;
-
-        constexpr PipelineLayoutDescriptor& setBindGroups(const std::vector<BindGroupLayout*>& value) { this->bindGroupLayouts = value; return *this; }
-        constexpr PipelineLayoutDescriptor& setConstants(const std::vector<ConstantLayout>& value) { this->constantLayouts = value; return *this; }
-
-        constexpr PipelineLayoutDescriptor& addBindGroup(BindGroupLayout* item) { this->bindGroupLayouts.emplace_back(item); return *this; }
-        constexpr PipelineLayoutDescriptor& addConstant(ConstantLayout item) { this->constantLayouts.emplace_back(item); return *this; }
-
-        constexpr PipelineLayoutDescriptor& addConstant(ShaderStageFlags shaderStage, Uint64 size, Uint64 offset) {
-            this->constantLayouts.emplace_back(
-                ConstantLayout()
-                    .setShaderStage(shaderStage)
-                    .setSize(size)
-                    .setOffset(offset)
-            );
-
-            return *this;
-        }
     };
 
     class BindGroup {
@@ -923,12 +724,13 @@ namespace RHI {
 
     struct VertexBufferLayout {
         Uint32 arrayStride;
-        VertexStepMode stepMode = VertexStepMode::eVertex;
         std::vector<VertexAttribute> attributes;
+
+        VertexStepMode stepMode = VertexStepMode::eVertex;
     };
 
     struct VertexState : ProgrammableStage {
-        std::vector<VertexBufferLayout> buffers{};
+        std::vector<VertexBufferLayout> buffers;
     };
 
     struct PrimitiveState {
@@ -1144,11 +946,19 @@ namespace RHI {
         eSubmitted
     };
 
+    struct CommandEncoderDescriptor {
+        QueueType queueType;
+    };
+
     class CommandsMixin {
+    public:
         virtual CommandState getCommandState() = 0;
     };
 
     class CommandEncoder : public CommandsMixin, public BarrierCommandsMixin {
+    public:
+        virtual CommandEncoderDescriptor getDesc() = 0;
+
         virtual std::shared_ptr<RenderPassEncoder> beginRenderPass(RenderPassDescriptor desc) = 0;
         virtual std::shared_ptr<ComputePassEncoder> beginComputePass(ComputePassDescriptor desc) = 0;
 
@@ -1381,8 +1191,7 @@ namespace RHI {
     // Queue
     // ===========================================================================================================================
 
-    enum class QueueType : uint8_t
-    {
+    enum class QueueType : uint8_t {
         Graphic,
         Compute,
         Transfer
@@ -1391,9 +1200,6 @@ namespace RHI {
     struct QueueDescriptor {
         QueueType type;
         uint32_t index;
-
-        constexpr QueueDescriptor& setType(QueueType type) { this->type = type; return *this; }
-        constexpr QueueDescriptor& setIndex(uint32_t index) { this->index = index; return *this; }
     };
 
     class Queue {
@@ -1486,7 +1292,7 @@ namespace RHI {
 		virtual std::shared_ptr<ComputePipeline> createComputePipeline(ComputePipelineDescriptor desc) = 0;
 		virtual std::shared_ptr<RenderPipeline> createRenderPipeline(RenderPipelineDescriptor desc) = 0;
 
-		virtual std::shared_ptr<CommandEncoder> beginCommandEncoder() = 0;
+		virtual std::shared_ptr<CommandEncoder> beginCommandEncoder(CommandEncoderDescriptor desc) = 0;
 
 		// QuerySet createQuerySet(QuerySetDescriptor desc);
 
