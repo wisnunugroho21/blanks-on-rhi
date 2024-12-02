@@ -412,19 +412,19 @@ namespace RHI {
         std::shared_ptr<ComputePassEncoder> beginComputePass(ComputePassDescriptor desc) override;
 
         void activatePipelineBarrier(
-            ShaderStage srcStage,
-            ShaderStage dstStage
+            PipelinerStageFlags srcStage,
+            PipelinerStageFlags dstStage
         )  override;
 
         void activateBufferBarrier(
-            ShaderStage srcStage,
-            ShaderStage dstStage,
+            PipelinerStageFlags srcStage,
+            PipelinerStageFlags dstStage,
             BufferBarrier desc
         )  override;
 
-        void activateImageBarrier(
-            ShaderStage srcStage,
-            ShaderStage dstStage,
+        void activateTextureBarrier(
+            PipelinerStageFlags srcStage,
+            PipelinerStageFlags dstStage,
             ImageBarrier desc
         )  override;
 
@@ -704,4 +704,10 @@ namespace RHI {
     VkAttachmentStoreOp convertStoreOpIntoVulkan(StoreOp storeOp);
 
     VkIndexType convertIndexFormatIntoVulkan(IndexFormat format);
+
+    VkPipelineStageFlags convertPipelineStageIntoVulkan(PipelinerStageFlags stage);
+
+    VkAccessFlags convertBufferAccessIntoVulkan(PipelinerStageFlags stage, ResourceAccess access, Buffer *buffer);
+
+    VkAccessFlags convertTextureAccessIntoVulkan(PipelinerStageFlags stage, ResourceAccess access, Texture *texture);
 }

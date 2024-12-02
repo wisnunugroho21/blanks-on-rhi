@@ -57,6 +57,7 @@ namespace RHI {
     typedef uint32_t TextureUsageFlags;
     typedef uint32_t BufferUsageFlags;
     typedef uint32_t ShaderStageFlags;
+    typedef uint32_t PipelinerStageFlags;
     typedef uint32_t ColorWriteFlags;
     typedef uint32_t ResolveModeFlags;
 
@@ -897,6 +898,20 @@ namespace RHI {
         eReadOnly,
         eReadWrite
     };
+
+    enum class PipelineStage : FlagsConstant {
+        eCompute            = 0x0001,
+        eVertex             = 0x0002,
+        eFragment           = 0x0004,
+        eTessellCtrl        = 0x0008,
+        eTessellEval        = 0x0010,
+        eTask               = 0x0020,
+        eMesh               = 0x0040,
+        eTransfer           = 0x0080,
+        eAttachmentOutput   = 0x0100,
+        eEarlyFragmentTest  = 0x0200,
+        eLateFragmentTest   = 0x0400,
+    };
     
     struct MemoryBarrier {
         ResourceAccess srcAccess;
@@ -910,28 +925,26 @@ namespace RHI {
     };
 
     struct ImageBarrier : MemoryBarrier {
-        Texture *texture;
-        TextureSubresource subresource;
-
+        TextureView* textureView;
         TextureState srcState;
         TextureState dstState;
     };
 
     class BarrierCommandsMixin {
         virtual void activatePipelineBarrier(
-            ShaderStage srcStage,
-            ShaderStage dstStage
+            PipelinerStageFlags srcStage,
+            PipelinerStageFlags dstStage
         ) = 0;
 
         virtual void activateBufferBarrier(
-            ShaderStage srcStage,
-            ShaderStage dstStage,
+            PipelinerStageFlags srcStage,
+            PipelinerStageFlags dstStage,
             BufferBarrier desc
         ) = 0;
 
-        virtual void activateImageBarrier(
-            ShaderStage srcStage,
-            ShaderStage dstStage,
+        virtual void activateTextureBarrier(
+            PipelinerStageFlags srcStage,
+            PipelinerStageFlags dstStage,
             ImageBarrier desc
         ) = 0;
     };

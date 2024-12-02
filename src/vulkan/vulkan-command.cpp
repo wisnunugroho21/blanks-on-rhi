@@ -14,25 +14,74 @@ namespace RHI {
             throw std::runtime_error("Failed to allocate command buffer!");
         }
 
-        /* VulkanCommandEncoder(
-            CommandEncoderDescriptor desc,
-            VulkanDevice* d,
-            VkCommandBuffer c
-        ) */
-
         return std::make_shared<VulkanCommandEncoder>(desc, this, commandBuffer);
     }
 
-    void VulkanCommandEncoder::activatePipelineBarrier(ShaderStage srcStage,ShaderStage dstStage) {
-
+    void VulkanCommandEncoder::activatePipelineBarrier(PipelinerStageFlags srcStage,PipelinerStageFlags dstStage) {
+        vkCmdPipelineBarrier(
+            this->commandBuffer,
+            convertPipelineStageIntoVulkan(srcStage),
+            convertPipelineStageIntoVulkan(dstStage),
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            0,
+            nullptr
+        );
     }
 
-    void VulkanCommandEncoder::activateBufferBarrier(ShaderStage srcStage,ShaderStage dstStage,BufferBarrier desc) {
+    void VulkanCommandEncoder::activateBufferBarrier(PipelinerStageFlags srcStage,PipelinerStageFlags dstStage, BufferBarrier desc) {
+        VkBufferMemoryBarrier bufferBarrier{
+          .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+          .srcAccessMask = convertBufferAccessIntoVulkan(srcStage, desc.srcAccess, desc.buffer),
+          .dstAccessMask = convertBufferAccessIntoVulkan(dstStage, desc.dstAccess, desc.buffer),
+          .buffer = dynamic_cast<VulkanBuffer*>(desc.buffer)->getNative(),
+          .offset = desc.offset,
+          .size = desc.size
+        };
 
+        vkCmdPipelineBarrier(
+            this->commandBuffer,
+            convertPipelineStageIntoVulkan(srcStage),
+            convertPipelineStageIntoVulkan(dstStage),
+            0,
+            0,
+            nullptr,
+            1,
+            &bufferBarrier,
+            0,
+            nullptr
+        );
     }
 
-    void VulkanCommandEncoder::activateImageBarrier(ShaderStage srcStage, ShaderStage dstStage, ImageBarrier desc) {
+    void VulkanCommandEncoder::activateTextureBarrier(PipelinerStageFlags srcStage, PipelinerStageFlags dstStage, ImageBarrier desc) {
+        VkImageMemoryBarrier imageBarrier{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .srcAccessMask = convertTextureAccessIntoVulkan(srcStage, desc.srcAccess, desc.textureView->getTexture()),
+            .dstAccessMask = convertTextureAccessIntoVulkan(dstStage, desc.dstAccess, desc.textureView->getTexture()),
+            .oldLayout = convertTextureStateIntoVulkan(desc.srcState),
+            .newLayout = convertTextureStateIntoVulkan(desc.dstState),
+            .subresourceRange.aspectMask = convertAspectIntoVulkan(desc.textureView->getDesc().subresource.aspect),
+            .subresourceRange.baseArrayLayer = desc.textureView->getDesc().subresource.baseArrayLayer,
+            .subresourceRange.layerCount = desc.textureView->getDesc().subresource.arrayLayerCount,
+            .subresourceRange.baseMipLevel = desc.textureView->getDesc().subresource.baseMipLevel,
+            .subresourceRange.levelCount = desc.textureView->getDesc().subresource.mipLevelCount
+        };
 
+        vkCmdPipelineBarrier(
+            this->commandBuffer,
+            convertPipelineStageIntoVulkan(srcStage),
+            convertPipelineStageIntoVulkan(dstStage),
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &imageBarrier
+        );
     }
 
     void VulkanCommandEncoder::copyBufferToBuffer(Buffer* source, Uint64 sourceOffset, Buffer* destination, Uint64 destinationOffset, Uint64 size) {
