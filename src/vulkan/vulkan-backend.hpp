@@ -133,6 +133,8 @@ namespace RHI {
 
         TextureDescriptor getDesc() override { return this->desc; }
 
+        TextureState getCurrentState() override { return this->state; }
+
         std::shared_ptr<TextureView> createView(TextureViewDescriptor descriptor) override;
 
         VkImage getNative() { return this->image; }
@@ -140,6 +142,7 @@ namespace RHI {
 
     protected:
         TextureDescriptor desc;
+        TextureState state;
 
     private:
         VulkanDevice* device;

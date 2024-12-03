@@ -361,6 +361,8 @@ namespace RHI {
     class Texture {
     public:
         virtual TextureDescriptor getDesc() = 0;
+
+        virtual TextureState getCurrentState() = 0;
         virtual std::shared_ptr<TextureView> createView(TextureViewDescriptor desc) = 0;
     };
 
@@ -980,22 +982,26 @@ namespace RHI {
             Uint64 sourceOffset,
             Buffer* destination,
             Uint64 destinationOffset,
-            Uint64 size) = 0;
+            Uint64 size
+        ) = 0;
 
         virtual void copyBufferToTexture(
             ImageCopyBuffer source,
             ImageCopyTexture destination,
-            Extent3D copySize) = 0;
+            Extent3D copySize
+        ) = 0;
 
         virtual void copyTextureToBuffer(
             ImageCopyTexture source,
             ImageCopyBuffer destination,
-            Extent3D copySize) = 0;
+            Extent3D copySize
+        ) = 0;
 
         virtual void copyTextureToTexture(
             ImageCopyTexture source,
             ImageCopyTexture destination,
-            Extent3D copySize) = 0;
+            Extent3D copySize
+        ) = 0;
 
         virtual void clearBuffer(
             Buffer* buffer,
@@ -1008,7 +1014,8 @@ namespace RHI {
             Uint32 firstQuery,
             Uint32 queryCount,
             Buffer* destination,
-            Uint64 destinationOffset) = 0;
+            Uint64 destinationOffset
+        ) = 0;
 
         virtual void finish() = 0;
     };
@@ -1213,6 +1220,11 @@ namespace RHI {
     struct QueueDescriptor {
         QueueType type;
         uint32_t index;
+        uint32_t maxSubmission;
+    };
+
+    class QueueAsync {
+
     };
 
     class Queue {
