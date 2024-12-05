@@ -135,6 +135,12 @@ namespace RHI {
         eUnmapped,
         eMapped
     };
+
+    struct BufferInfo {
+        Buffer* buffer;
+        uint64_t size = ULLONG_MAX;
+        uint64_t offset = 0;
+    };
     
     struct BufferDescriptor {
         Uint64 size;
@@ -315,19 +321,6 @@ namespace RHI {
         eDepthStencilAttachment = 0x20
     };
 
-    enum class TextureState : Uint8 {
-        eUndefined,
-        eColorAttachment,
-        eDepthAttachment,
-        eStencilAttachment,
-        eColorTextureBinding,
-        eDepthStencilTextureBinding,
-        eStorageBinding,
-        eCopySrc,
-        eCopyDst,
-        ePresent
-    };
-
     struct TextureDescriptor {
         Extent3D size;
         TextureFormat format;
@@ -338,7 +331,6 @@ namespace RHI {
         Uint32 sampleCount = 1;
 
         TextureDimension dimension = TextureDimension::e2D;
-        TextureState initialState = TextureState::eUndefined;
     };
 
     struct TextureSubresource {
@@ -362,7 +354,6 @@ namespace RHI {
     public:
         virtual TextureDescriptor getDesc() = 0;
 
-        virtual TextureState getCurrentState() = 0;
         virtual std::shared_ptr<TextureView> createView(TextureViewDescriptor desc) = 0;
     };
 
@@ -458,6 +449,12 @@ namespace RHI {
         eSampler
     };
 
+    enum class ResourceAccess : Uint8 {
+        eWriteOnly,
+        eReadOnly,
+        eReadWrite
+    };
+
     struct BindGroupLayoutEntry {
         Uint32 binding;
         ShaderStageFlags shaderStage;
@@ -475,42 +472,44 @@ namespace RHI {
         virtual BindGroupLayoutDescriptor getDesc() = 0;
     };
 
-    struct BindGroupEntry {
-        Uint32 binding;
-    };
-
     struct BufferBindGroupItem {
         Buffer* buffer;
+
         Uint64 size = ULLONG_MAX;
         Uint64 offset = 0;
+        ResourceAccess access = ResourceAccess::eReadOnly;
     };
 
     struct TextureBindGroupItem {
         TextureView* textureView;
+        ResourceAccess access = ResourceAccess::eReadOnly;
     };
 
     struct SamplerBindGroupItem {
         Sampler* sampler;
     };
 
-    struct BufferBindGroupEntry : BindGroupEntry {
+    struct BufferBindGroupEntry {
+        Uint32 binding;
         std::vector<BufferBindGroupItem> groupItems;
     };
 
-    struct TextureBindGroupEntry : BindGroupEntry {
+    struct TextureBindGroupEntry {
+        Uint32 binding;
         std::vector<TextureBindGroupItem> groupItems;
     };
 
-    struct SamplerBindGroupEntry : BindGroupEntry {
+    struct SamplerBindGroupEntry {
+        Uint32 binding;
         std::vector<SamplerBindGroupItem> groupItems;
     };
 
     struct BindGroupDescriptor {
         BindGroupLayout* layout;
 
-        std::vector<BufferBindGroupEntry> bufferEntries;
-        std::vector<TextureBindGroupEntry> textureEntries;
-        std::vector<SamplerBindGroupEntry> samplerEntries;
+        std::vector<BufferBindGroupEntry> buffers;
+        std::vector<TextureBindGroupEntry> textures;
+        std::vector<SamplerBindGroupEntry> samplers;
     };
 
     struct ConstantLayout {
@@ -681,10 +680,6 @@ namespace RHI {
         eSet
     };
 
-    struct ProgrammableStage {
-        ShaderModule* module;
-    };
-
     struct VertexAttribute {
         VertexFormat format;
         Uint32 offset;
@@ -732,7 +727,8 @@ namespace RHI {
         VertexStepMode stepMode = VertexStepMode::eVertex;
     };
 
-    struct VertexState : ProgrammableStage {
+    struct VertexState {
+        ShaderModule* module;
         std::vector<VertexBufferLayout> buffers;
     };
 
@@ -795,7 +791,8 @@ namespace RHI {
         bool alphaToOneEnabled = false;
     };
 
-    struct FragmentState : ProgrammableStage {
+    struct FragmentState {
+        ShaderModule* module;
         std::vector<ColorTargetState> targets;
         
         LogicOp logicOp = LogicOp::eCopy;
@@ -814,15 +811,18 @@ namespace RHI {
         bool stencilReference = false;
     };
 
-    struct PipelineDescriptorBase {
-        PipelineLayout* layout;
+    struct ProgrammableStage{
+        ShaderModule* module;
     };
 
-    struct ComputePipelineDescriptor : PipelineDescriptorBase {
+    struct ComputePipelineDescriptor {
+        PipelineLayout* layout;
         ProgrammableStage compute;
     };
 
-    struct RenderPipelineDescriptor : PipelineDescriptorBase {
+    struct RenderPipelineDescriptor {
+        PipelineLayout* layout;
+
         VertexState vertex;
         FragmentState fragment;
         DepthState depth;
@@ -874,81 +874,17 @@ namespace RHI {
     // Copies
     // ===========================================================================================================================
 
-    struct ImageDataLayout {
+    struct ImageCopyTexture {
+        TextureView* texture;
+        Origin3D origin{};
+    };
+
+    struct ImageCopyBuffer {
+        Buffer* buffer;
+
         Uint64 offset = 0;
         Uint32 bytesPerRow;
         Uint32 rowsPerImage;
-    };
-
-    struct ImageCopyTexture {
-        Texture* texture;
-        Uint32 mipLevel = 0;
-        Origin3D origin{};
-        TextureAspect aspect = TextureAspect::eColor;
-    };
-
-    struct ImageCopyBuffer : ImageDataLayout {
-        Buffer* buffer;
-    };
-
-    // ===========================================================================================================================
-    // Barrier
-    // ===========================================================================================================================
-
-    enum class ResourceAccess : Uint8 {
-        eWriteOnly,
-        eReadOnly,
-        eReadWrite
-    };
-
-    enum class PipelineStage : FlagsConstant {
-        eCompute            = 0x0001,
-        eVertex             = 0x0002,
-        eFragment           = 0x0004,
-        eTessellCtrl        = 0x0008,
-        eTessellEval        = 0x0010,
-        eTask               = 0x0020,
-        eMesh               = 0x0040,
-        eTransfer           = 0x0080,
-        eAttachmentOutput   = 0x0100,
-        eEarlyFragmentTest  = 0x0200,
-        eLateFragmentTest   = 0x0400,
-    };
-    
-    struct MemoryBarrier {
-        ResourceAccess srcAccess;
-        ResourceAccess dstAccess;
-    };
-
-    struct BufferBarrier : MemoryBarrier {
-        Buffer* buffer;
-        uint64_t size = ULLONG_MAX;
-        uint64_t offset = 0;
-    };
-
-    struct ImageBarrier : MemoryBarrier {
-        TextureView* textureView;
-        TextureState srcState;
-        TextureState dstState;
-    };
-
-    class BarrierCommandsMixin {
-        virtual void activatePipelineBarrier(
-            PipelinerStageFlags srcStage,
-            PipelinerStageFlags dstStage
-        ) = 0;
-
-        virtual void activateBufferBarrier(
-            PipelinerStageFlags srcStage,
-            PipelinerStageFlags dstStage,
-            BufferBarrier desc
-        ) = 0;
-
-        virtual void activateTextureBarrier(
-            PipelinerStageFlags srcStage,
-            PipelinerStageFlags dstStage,
-            ImageBarrier desc
-        ) = 0;
     };
 
     // ===========================================================================================================================
@@ -970,7 +906,7 @@ namespace RHI {
         virtual CommandState getCommandState() = 0;
     };
 
-    class CommandEncoder : public CommandsMixin, public BarrierCommandsMixin {
+    class CommandEncoder : public CommandsMixin {
     public:
         virtual CommandEncoderDescriptor getDesc() = 0;
 

@@ -1,6 +1,36 @@
 #include "vulkan-backend.hpp"
 
+#include <utility>
+
 namespace RHI {
+    VkImageLayout findInitialLayout(TextureDescriptor desc) {
+        if (desc.usage & std::to_underlying(TextureUsage::eCopySrc)) {
+            return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        }
+
+        else if (desc.usage & std::to_underlying(TextureUsage::eCopyDst)) {
+            return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        }
+
+        else if (desc.usage & std::to_underlying(TextureUsage::eColorAttachment)) {
+            return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        }
+
+        else if (desc.usage & std::to_underlying(TextureUsage::eDepthStencilAttachment)) {
+            return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        }
+
+        else if (desc.usage & std::to_underlying(TextureUsage::eTextureBinding)) {
+            return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        }
+
+        else if (desc.usage & std::to_underlying(TextureUsage::eStorageBinding)) {
+            return VK_IMAGE_LAYOUT_GENERAL;
+        }
+
+        return VK_IMAGE_LAYOUT_GENERAL;
+    }
+
     std::shared_ptr<Texture> VulkanDevice::createTexture(TextureDescriptor desc) {
         VkImageCreateInfo imageInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -13,7 +43,7 @@ namespace RHI {
             .arrayLayers = desc.sliceLayersNum,
             .tiling = VK_IMAGE_TILING_OPTIMAL,
             .usage = convertImageUsageIntoVulkan(desc.usage),
-            .initialLayout = convertTextureStateIntoVulkan(desc.initialState)
+            .initialLayout = findInitialLayout(desc)
         };
 
         VmaAllocationCreateInfo allocInfo{

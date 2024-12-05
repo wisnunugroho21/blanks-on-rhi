@@ -133,16 +133,15 @@ namespace RHI {
 
         TextureDescriptor getDesc() override { return this->desc; }
 
-        TextureState getCurrentState() override { return this->state; }
-
         std::shared_ptr<TextureView> createView(TextureViewDescriptor descriptor) override;
 
         VkImage getNative() { return this->image; }
         VmaAllocation getMemoryAllocation() { return this->memoryAllocation; }
 
+        VkImageLayout layout;
+
     protected:
         TextureDescriptor desc;
-        TextureState state;
 
     private:
         VulkanDevice* device;
@@ -390,6 +389,65 @@ namespace RHI {
         VkPipeline pipeline;
     };
 
+    // ===========================================================================================================================
+    // Barrier
+    // ===========================================================================================================================
+
+    enum class TextureState : Uint8 {
+        eUndefined,
+        eColorAttachment,
+        eDepthAttachment,
+        eStencilAttachment,
+        eColorTextureBinding,
+        eDepthStencilTextureBinding,
+        eStorageBinding,
+        eCopySrc,
+        eCopyDst,
+        ePresent
+    };
+
+    enum class PipelineStage : FlagsConstant {
+        eCompute            = 0x0001,
+        eVertex             = 0x0002,
+        eFragment           = 0x0004,
+        eTessellCtrl        = 0x0008,
+        eTessellEval        = 0x0010,
+        eTask               = 0x0020,
+        eMesh               = 0x0040,
+        eTransfer           = 0x0080,
+        eAttachmentOutput   = 0x0100,
+        eLateFragmentTest   = 0x0200,
+    };
+
+    struct BufferBarrierState {
+        PipelineStage stage;
+        ResourceAccess access;
+        BufferInfo desc;
+    };
+
+    struct TextureBarrierState {
+        PipelineStage stage;
+        ResourceAccess access;
+        TextureView* target;
+    };
+
+    class VulkanBarrier {
+    public:
+        void recordBufferBarrier(VkCommandBuffer commandBuffer, PipelineStage stage, 
+            ResourceAccess access, BufferInfo desc);
+
+        void recordTextureBarrier(VkCommandBuffer commandBuffer, PipelineStage stage, 
+            ResourceAccess access, TextureView* target);
+
+    private:
+        std::vector<BufferBarrierState> curBufferStates;
+        std::vector<TextureBarrierState> curTextureStates;
+    };
+
+    // ===========================================================================================================================
+    // Command Encoder
+    // ===========================================================================================================================
+
     class VulkanCommandEncoder : public CommandEncoder {
     public:
         VulkanCommandEncoder(
@@ -413,23 +471,6 @@ namespace RHI {
 
         std::shared_ptr<RenderPassEncoder> beginRenderPass(RenderPassDescriptor desc) override;
         std::shared_ptr<ComputePassEncoder> beginComputePass(ComputePassDescriptor desc) override;
-
-        void activatePipelineBarrier(
-            PipelinerStageFlags srcStage,
-            PipelinerStageFlags dstStage
-        )  override;
-
-        void activateBufferBarrier(
-            PipelinerStageFlags srcStage,
-            PipelinerStageFlags dstStage,
-            BufferBarrier desc
-        )  override;
-
-        void activateTextureBarrier(
-            PipelinerStageFlags srcStage,
-            PipelinerStageFlags dstStage,
-            ImageBarrier desc
-        )  override;
 
         void copyBufferToBuffer(
             Buffer* source,
@@ -472,6 +513,7 @@ namespace RHI {
 
     protected:
         CommandEncoderDescriptor desc;
+        VulkanBarrier *barrier;
 
     private:
         VulkanDevice* device;
@@ -515,7 +557,6 @@ namespace RHI {
 
         ComputeState currentComputeState;
         CommandState currentCommandState;
-        
     };
 
     class VulkanRenderPassEncoder : public RenderPassEncoder {
@@ -642,8 +683,6 @@ namespace RHI {
 
     VkImageUsageFlags convertImageUsageIntoVulkan(TextureUsageFlags usage);
 
-    VkImageLayout convertTextureStateIntoVulkan(TextureState state);
-
     VkImageViewType convertTextureViewDimensionIntoVulkan(TextureViewDimension viewDimension);
 
     VkImageAspectFlags convertAspectIntoVulkan(TextureAspect aspect);
@@ -708,9 +747,5 @@ namespace RHI {
 
     VkIndexType convertIndexFormatIntoVulkan(IndexFormat format);
 
-    VkPipelineStageFlags convertPipelineStageIntoVulkan(PipelinerStageFlags stage);
-
-    VkAccessFlags convertBufferAccessIntoVulkan(PipelinerStageFlags stage, ResourceAccess access, Buffer *buffer);
-
-    VkAccessFlags convertTextureAccessIntoVulkan(PipelinerStageFlags stage, ResourceAccess access, Texture *texture);
+    VkPipelineStageFlags convertPipelineStageIntoVulkan(PipelineStage stage);
 }

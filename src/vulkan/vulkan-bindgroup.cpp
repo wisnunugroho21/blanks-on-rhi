@@ -62,14 +62,14 @@ namespace RHI {
 
             if (entry.type == BindingType::eUniformBuffer || entry.type == BindingType::eStorageBuffer) {
                 size_t bindIndex = -1;
-                for (size_t i = 0; i < desc.bufferEntries.size(); i++) {
-                    if (desc.bufferEntries[i].binding == entry.binding) {
+                for (size_t i = 0; i < desc.buffers.size(); i++) {
+                    if (desc.buffers[i].binding == entry.binding) {
                         bindIndex = i;
                         break;
                     }
                 }
 
-                BufferBindGroupEntry bufferEntry = desc.bufferEntries[bindIndex];
+                BufferBindGroupEntry bufferEntry = desc.buffers[bindIndex];
 
                 writeDescSet.descriptorCount = static_cast<uint32_t>(bufferEntry.groupItems.size());
                 std::vector<VkDescriptorBufferInfo> curBufferInfos{};
@@ -90,14 +90,14 @@ namespace RHI {
 
             else if (entry.type == BindingType::eSampledTexture || entry.type == BindingType::eStorageTexture) {
                 size_t bindIndex = -1;
-                for (size_t i = 0; i < desc.textureEntries.size(); i++) {
-                    if (desc.textureEntries[i].binding == entry.binding) {
+                for (size_t i = 0; i < desc.textures.size(); i++) {
+                    if (desc.textures[i].binding == entry.binding) {
                         bindIndex = i;
                         break;
                     }
                 }
 
-                TextureBindGroupEntry textureEntry = desc.textureEntries[bindIndex];
+                TextureBindGroupEntry textureEntry = desc.textures[bindIndex];
 
                 writeDescSet.descriptorCount = static_cast<Uint32>(textureEntry.groupItems.size());
                 std::vector<VkDescriptorImageInfo> curImageInfos{};
@@ -120,14 +120,14 @@ namespace RHI {
 
             else if (entry.type == BindingType::eSampler) {
                 size_t bindIndex = -1;
-                for (size_t i = 0; i < desc.samplerEntries.size(); i++) {
-                    if (desc.samplerEntries[i].binding == entry.binding) {
+                for (size_t i = 0; i < desc.samplers.size(); i++) {
+                    if (desc.samplers[i].binding == entry.binding) {
                         bindIndex = i;
                         break;
                     }
                 }
 
-                SamplerBindGroupEntry samplerEntry = desc.samplerEntries[bindIndex];
+                SamplerBindGroupEntry samplerEntry = desc.samplers[bindIndex];
 
                 writeDescSet.descriptorCount = static_cast<Uint32>(samplerEntry.groupItems.size());
                 std::vector<VkDescriptorImageInfo> curImageInfos{};

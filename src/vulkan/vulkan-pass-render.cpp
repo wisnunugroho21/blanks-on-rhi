@@ -2,6 +2,17 @@
 
 namespace RHI {
     std::shared_ptr<RenderPassEncoder> VulkanCommandEncoder::beginRenderPass(RenderPassDescriptor desc) {
+        for (auto &&colorAttachment : desc.colorAttachments) {
+            ResourceAccess attachmentAccess = ResourceAccess::eWriteOnly;
+
+            if (colorAttachment.loadOp == LoadOp::eLoad) {
+                attachmentAccess = ResourceAccess::eReadWrite;
+            }
+
+            this->barrier->recordTextureBarrier(this->commandBuffer, PipelineStage::eAttachmentOutput, 
+                attachmentAccess, colorAttachment.targetView);
+        }
+
         std::vector<VkRenderingAttachmentInfo> colorRenderAttachInfos{};
 
         VkRenderingAttachmentInfo colorRenderAttachInfo{
