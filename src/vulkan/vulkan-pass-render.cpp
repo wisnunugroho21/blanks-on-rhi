@@ -13,6 +13,16 @@ namespace RHI {
                 attachmentAccess, colorAttachment.targetView);
         }
 
+        if (desc.depthAttachment.targetView != nullptr) {
+            this->barrier->recordTextureBarrier(this->commandBuffer, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                ResourceAccess::eReadWrite, desc.depthAttachment.targetView);
+        }
+
+        if (desc.stencilAttachment.targetView != nullptr) {
+            this->barrier->recordTextureBarrier(this->commandBuffer, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                ResourceAccess::eReadWrite, desc.stencilAttachment.targetView);
+        }
+
         std::vector<VkRenderingAttachmentInfo> colorRenderAttachInfos{};
 
         VkRenderingAttachmentInfo colorRenderAttachInfo{
