@@ -9,7 +9,7 @@ namespace RHI {
                 attachmentAccess = ResourceAccess::eReadWrite;
             }
 
-            this->barrier->recordTextureBarrier(this->commandBuffer, PipelineStage::eAttachmentOutput, 
+            this->barrier->recordTextureBarrier(this->commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 
                 attachmentAccess, colorAttachment.targetView);
         }
 
@@ -38,43 +38,51 @@ namespace RHI {
             colorRenderAttachInfos.emplace_back(colorRenderAttachInfo);
         }
 
-        VkRenderingAttachmentInfo depthRenderAttachInfo{
-            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-            .imageView = dynamic_cast<VulkanTextureView*>(desc.depthAttachment.targetView)->getNative(),
-            .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-
-            .loadOp = convertLoadOpIntoVulkan(desc.depthAttachment.loadOp),
-            .storeOp = convertStoreOpIntoVulkan(desc.depthAttachment.storeOp),
-
-            .clearValue.depthStencil.depth = desc.depthAttachment.clearValue
-        };
-
-        VkRenderingAttachmentInfo stencilRenderAttachInfo{
-            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-            .imageView = dynamic_cast<VulkanTextureView*>(desc.stencilAttachment.targetView)->getNative(),
-            .imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
-
-            .loadOp = convertLoadOpIntoVulkan(desc.stencilAttachment.loadOp),
-            .storeOp = convertStoreOpIntoVulkan(desc.stencilAttachment.storeOp),
-
-            .clearValue.depthStencil.stencil = desc.stencilAttachment.clearValue
-        };
-
         VkRenderingInfo renderingInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-            .renderArea.extent.height = desc.depthAttachment.targetView->getTexture()->getDesc().size.height,
-            .renderArea.extent.width = desc.depthAttachment.targetView->getTexture()->getDesc().size.width,
+            .renderArea.extent.height = desc.colorAttachments[0].targetView->getTexture()->getDesc().size.height,
+            .renderArea.extent.width = desc.colorAttachments[0].targetView->getTexture()->getDesc().size.width,
 
             .renderArea.offset.x = 0,
             .renderArea.offset.y = 0,
-            .layerCount = desc.depthAttachment.targetView->getTexture()->getDesc().sliceLayersNum,
+            .layerCount = desc.colorAttachments[0].targetView->getTexture()->getDesc().sliceLayersNum,
 
             .colorAttachmentCount = static_cast<uint32_t>(colorRenderAttachInfos.size()),
             .pColorAttachments = colorRenderAttachInfos.data(),
 
-            .pDepthAttachment = &depthRenderAttachInfo,
-            .pStencilAttachment = &stencilRenderAttachInfo
+            .pDepthAttachment = nullptr,
+            .pStencilAttachment = nullptr
         };
+
+        if (desc.depthAttachment.targetView != nullptr) {
+            VkRenderingAttachmentInfo depthRenderAttachInfo{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+                .imageView = dynamic_cast<VulkanTextureView*>(desc.depthAttachment.targetView)->getNative(),
+                .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+
+                .loadOp = convertLoadOpIntoVulkan(desc.depthAttachment.loadOp),
+                .storeOp = convertStoreOpIntoVulkan(desc.depthAttachment.storeOp),
+
+                .clearValue.depthStencil.depth = desc.depthAttachment.clearValue
+            };
+
+            renderingInfo.pDepthAttachment = &depthRenderAttachInfo;
+        }
+
+        if (desc.stencilAttachment.targetView != nullptr) {
+            VkRenderingAttachmentInfo stencilRenderAttachInfo{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+                .imageView = dynamic_cast<VulkanTextureView*>(desc.stencilAttachment.targetView)->getNative(),
+                .imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
+
+                .loadOp = convertLoadOpIntoVulkan(desc.stencilAttachment.loadOp),
+                .storeOp = convertStoreOpIntoVulkan(desc.stencilAttachment.storeOp),
+
+                .clearValue.depthStencil.stencil = desc.stencilAttachment.clearValue
+            };
+
+            renderingInfo.pStencilAttachment = &stencilRenderAttachInfo;
+        }
         
         vkCmdBeginRendering(this->commandBuffer, &renderingInfo);
 

@@ -393,50 +393,24 @@ namespace RHI {
     // Barrier
     // ===========================================================================================================================
 
-    enum class TextureState : Uint8 {
-        eUndefined,
-        eColorAttachment,
-        eDepthAttachment,
-        eStencilAttachment,
-        eColorTextureBinding,
-        eDepthStencilTextureBinding,
-        eStorageBinding,
-        eCopySrc,
-        eCopyDst,
-        ePresent
-    };
-
-    enum class PipelineStage : FlagsConstant {
-        eCompute            = 0x0001,
-        eVertex             = 0x0002,
-        eFragment           = 0x0004,
-        eTessellCtrl        = 0x0008,
-        eTessellEval        = 0x0010,
-        eTask               = 0x0020,
-        eMesh               = 0x0040,
-        eTransfer           = 0x0080,
-        eAttachmentOutput   = 0x0100,
-        eLateFragmentTest   = 0x0200,
-    };
-
     struct BufferBarrierState {
-        PipelineStage stage;
+        VkPipelineStageFlagBits stage;
         ResourceAccess access;
         BufferInfo desc;
     };
 
     struct TextureBarrierState {
-        PipelineStage stage;
+        VkPipelineStageFlagBits stage;
         ResourceAccess access;
         TextureView* target;
     };
 
     class VulkanBarrier {
     public:
-        void recordBufferBarrier(VkCommandBuffer commandBuffer, PipelineStage stage, 
+        void recordBufferBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits stage, 
             ResourceAccess access, BufferInfo desc);
 
-        void recordTextureBarrier(VkCommandBuffer commandBuffer, PipelineStage stage, 
+        void recordTextureBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits stage, 
             ResourceAccess access, TextureView* target);
 
     private:
@@ -746,6 +720,4 @@ namespace RHI {
     VkAttachmentStoreOp convertStoreOpIntoVulkan(StoreOp storeOp);
 
     VkIndexType convertIndexFormatIntoVulkan(IndexFormat format);
-
-    VkPipelineStageFlags convertPipelineStageIntoVulkan(PipelineStage stage);
 }

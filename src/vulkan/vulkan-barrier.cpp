@@ -3,28 +3,28 @@
 #include <utility>
 
 namespace RHI {
-    VkAccessFlags convertBufferAccessIntoVulkan(PipelineStage stage, ResourceAccess access, Buffer *buffer) {
-        if (stage == PipelineStage::eTransfer && access == ResourceAccess::eReadOnly) {
+    VkAccessFlags convertBufferAccessIntoVulkan(VkPipelineStageFlagBits stage, ResourceAccess access, Buffer *buffer) {
+        if (stage == VK_PIPELINE_STAGE_TRANSFER_BIT && access == ResourceAccess::eReadOnly) {
             return VK_ACCESS_TRANSFER_READ_BIT;
         } 
         
-        else if (stage == PipelineStage::eTransfer && access == ResourceAccess::eWriteOnly) {
+        else if (stage == VK_PIPELINE_STAGE_TRANSFER_BIT && access == ResourceAccess::eWriteOnly) {
             return VK_ACCESS_TRANSFER_WRITE_BIT;
         } 
         
-        else if (stage == PipelineStage::eTransfer && access == ResourceAccess::eReadWrite) {
+        else if (stage == VK_PIPELINE_STAGE_TRANSFER_BIT && access == ResourceAccess::eReadWrite) {
             return VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
         } 
         
-        else if (stage == PipelineStage::eVertex && buffer->getDesc().usage & std::to_underlying(BufferUsage::eVertex)) {
+        else if (stage == VK_PIPELINE_STAGE_VERTEX_SHADER_BIT && buffer->getDesc().usage & std::to_underlying(BufferUsage::eVertex)) {
             return VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
         } 
         
-        else if (stage == PipelineStage::eVertex && buffer->getDesc().usage & std::to_underlying(BufferUsage::eIndex)) {
+        else if (stage == VK_PIPELINE_STAGE_VERTEX_SHADER_BIT && buffer->getDesc().usage & std::to_underlying(BufferUsage::eIndex)) {
             return VK_ACCESS_INDEX_READ_BIT;
         }
 
-        else if (stage == PipelineStage::eVertex && buffer->getDesc().usage & std::to_underlying(BufferUsage::eIndirect)) {
+        else if (stage == VK_PIPELINE_STAGE_VERTEX_SHADER_BIT && buffer->getDesc().usage & std::to_underlying(BufferUsage::eIndirect)) {
             return VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
         } 
         
@@ -32,20 +32,20 @@ namespace RHI {
             return VK_ACCESS_UNIFORM_READ_BIT;
         }
 
-        else if (stage != PipelineStage::eTransfer && stage != PipelineStage::eAttachmentOutput && 
-            stage != PipelineStage::eLateFragmentTest && access == ResourceAccess::eReadOnly) 
+        else if (stage != VK_PIPELINE_STAGE_TRANSFER_BIT && stage != VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT && 
+            stage != VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT && access == ResourceAccess::eReadOnly) 
         {
             return VK_ACCESS_SHADER_READ_BIT;
         }
 
-        else if (stage != PipelineStage::eTransfer && stage != PipelineStage::eAttachmentOutput && 
-            stage != PipelineStage::eLateFragmentTest && access == ResourceAccess::eWriteOnly) 
+        else if (stage != VK_PIPELINE_STAGE_TRANSFER_BIT && stage != VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT && 
+            stage != VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT && access == ResourceAccess::eWriteOnly) 
         {
             return VK_ACCESS_SHADER_WRITE_BIT;
         }
 
-        else if (stage != PipelineStage::eTransfer && stage != PipelineStage::eAttachmentOutput && 
-            stage != PipelineStage::eLateFragmentTest && access == ResourceAccess::eReadWrite) 
+        else if (stage != VK_PIPELINE_STAGE_TRANSFER_BIT && stage != VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT && 
+            stage != VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT && access == ResourceAccess::eReadWrite) 
         {
             return VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
         }
@@ -63,75 +63,75 @@ namespace RHI {
         return VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
     }
 
-    VkAccessFlags convertTextureAccessIntoVulkan(PipelineStage stage, ResourceAccess access, Texture *texture) {
-        if (stage == PipelineStage::eTransfer && access == ResourceAccess::eReadOnly) {
+    VkAccessFlags convertTextureAccessIntoVulkan(VkPipelineStageFlagBits stage, ResourceAccess access, Texture *texture) {
+        if (stage == VK_PIPELINE_STAGE_TRANSFER_BIT && access == ResourceAccess::eReadOnly) {
             return VK_ACCESS_TRANSFER_READ_BIT;
         } 
         
-        else if (stage == PipelineStage::eTransfer && access == ResourceAccess::eWriteOnly) {
+        else if (stage == VK_PIPELINE_STAGE_TRANSFER_BIT && access == ResourceAccess::eWriteOnly) {
             return VK_ACCESS_TRANSFER_WRITE_BIT;
         } 
         
-        else if (stage == PipelineStage::eTransfer && access == ResourceAccess::eReadWrite) {
+        else if (stage == VK_PIPELINE_STAGE_TRANSFER_BIT && access == ResourceAccess::eReadWrite) {
             return VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
         }
 
-        else if (stage == PipelineStage::eAttachmentOutput 
+        else if (stage == VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT 
             && texture->getDesc().usage & std::to_underlying(TextureUsage::eColorAttachment)
             && access == ResourceAccess::eReadOnly) 
         {
             return VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
         }
 
-        else if (stage == PipelineStage::eAttachmentOutput 
+        else if (stage == VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT 
             && texture->getDesc().usage & std::to_underlying(TextureUsage::eColorAttachment)
             && access == ResourceAccess::eWriteOnly) 
         {
             return VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         }
 
-        else if (stage == PipelineStage::eAttachmentOutput 
+        else if (stage == VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT 
             && texture->getDesc().usage & std::to_underlying(TextureUsage::eColorAttachment)
             && access == ResourceAccess::eReadWrite) 
         {
             return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         }
 
-        else if (stage == PipelineStage::eLateFragmentTest
+        else if (stage == VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
             && texture->getDesc().usage & std::to_underlying(TextureUsage::eDepthStencilAttachment)
             && access == ResourceAccess::eReadOnly) 
         {
             return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
         }
 
-        else if (stage == PipelineStage::eLateFragmentTest
+        else if (stage == VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
             && texture->getDesc().usage & std::to_underlying(TextureUsage::eDepthStencilAttachment)
             && access == ResourceAccess::eWriteOnly) 
         {
             return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         }
 
-        else if (stage == PipelineStage::eLateFragmentTest
+        else if (stage == VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
             && texture->getDesc().usage & std::to_underlying(TextureUsage::eDepthStencilAttachment)
             && access == ResourceAccess::eReadWrite) 
         {
             return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         }
 
-        else if (stage != PipelineStage::eTransfer && stage != PipelineStage::eAttachmentOutput && 
-            stage != PipelineStage::eLateFragmentTest && access == ResourceAccess::eReadOnly) 
+        else if (stage != VK_PIPELINE_STAGE_TRANSFER_BIT && stage != VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT && 
+            stage != VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT && access == ResourceAccess::eReadOnly) 
         {
             return VK_ACCESS_SHADER_READ_BIT;
         }
 
-        else if (stage != PipelineStage::eTransfer && stage != PipelineStage::eAttachmentOutput && 
-            stage != PipelineStage::eLateFragmentTest && access == ResourceAccess::eWriteOnly) 
+        else if (stage != VK_PIPELINE_STAGE_TRANSFER_BIT && stage != VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT && 
+            stage != VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT && access == ResourceAccess::eWriteOnly) 
         {
             return VK_ACCESS_SHADER_WRITE_BIT;
         }
 
-        else if (stage != PipelineStage::eTransfer && stage != PipelineStage::eAttachmentOutput && 
-            stage != PipelineStage::eLateFragmentTest && access == ResourceAccess::eReadWrite) 
+        else if (stage != VK_PIPELINE_STAGE_TRANSFER_BIT && stage != VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT && 
+            stage != VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT && access == ResourceAccess::eReadWrite) 
         {
             return VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
         }
@@ -149,31 +149,31 @@ namespace RHI {
         return VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
     }
 
-    VkImageLayout findImageLayout(PipelineStage stage, ResourceAccess access, Texture *texture) {
-        if (stage == PipelineStage::eTransfer && texture->getDesc().usage & std::to_underlying(TextureUsage::eCopySrc)) {
+    VkImageLayout findImageLayout(VkPipelineStageFlagBits stage, ResourceAccess access, Texture *texture) {
+        if (stage == VK_PIPELINE_STAGE_TRANSFER_BIT && texture->getDesc().usage & std::to_underlying(TextureUsage::eCopySrc)) {
             return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         }
 
-        else if (stage == PipelineStage::eTransfer && texture->getDesc().usage & std::to_underlying(TextureUsage::eCopyDst)) {
+        else if (stage == VK_PIPELINE_STAGE_TRANSFER_BIT && texture->getDesc().usage & std::to_underlying(TextureUsage::eCopyDst)) {
             return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         }
 
-        else if (stage == PipelineStage::eAttachmentOutput && texture->getDesc().usage & std::to_underlying(TextureUsage::eColorAttachment)) {
+        else if (stage == VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT && texture->getDesc().usage & std::to_underlying(TextureUsage::eColorAttachment)) {
             return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         }
 
-        else if (stage == PipelineStage::eLateFragmentTest && texture->getDesc().usage & std::to_underlying(TextureUsage::eDepthStencilAttachment)) {
+        else if (stage == VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT && texture->getDesc().usage & std::to_underlying(TextureUsage::eDepthStencilAttachment)) {
             return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         }
 
-        else if (stage != PipelineStage::eTransfer && stage != PipelineStage::eAttachmentOutput && 
-            stage != PipelineStage::eLateFragmentTest && texture->getDesc().usage & std::to_underlying(TextureUsage::eTextureBinding)) 
+        else if (stage != VK_PIPELINE_STAGE_TRANSFER_BIT && stage != VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT && 
+            stage != VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT && texture->getDesc().usage & std::to_underlying(TextureUsage::eTextureBinding)) 
         {
             return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         }
 
-        else if (stage != PipelineStage::eTransfer && stage != PipelineStage::eAttachmentOutput && 
-            stage != PipelineStage::eLateFragmentTest && texture->getDesc().usage & std::to_underlying(TextureUsage::eStorageBinding)) 
+        else if (stage != VK_PIPELINE_STAGE_TRANSFER_BIT && stage != VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT && 
+            stage != VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT && texture->getDesc().usage & std::to_underlying(TextureUsage::eStorageBinding)) 
         {
             return VK_IMAGE_LAYOUT_GENERAL;
         }
@@ -198,13 +198,12 @@ namespace RHI {
     }
 
     void VulkanBarrier::recordBufferBarrier(VkCommandBuffer commandBuffer, 
-        PipelineStage stage, ResourceAccess access, BufferInfo desc) 
+        VkPipelineStageFlagBits stage, ResourceAccess access, BufferInfo desc) 
     {
         bool isBarrierExist = false;
 
         for (auto &&curBufferState : this->curBufferStates) {
-            if (curBufferState.stage == stage && curBufferState.access == access 
-                && curBufferState.desc.buffer == desc.buffer 
+            if (curBufferState.desc.buffer == desc.buffer 
                 && curBufferState.desc.size == desc.size
                 && curBufferState.desc.offset == desc.offset)
             {
@@ -219,8 +218,8 @@ namespace RHI {
 
                 vkCmdPipelineBarrier(
                     commandBuffer,
-                    convertPipelineStageIntoVulkan(curBufferState.stage),
-                    convertPipelineStageIntoVulkan(stage),
+                    curBufferState.stage,
+                    stage,
                     0,
                     0,
                     nullptr,
@@ -247,14 +246,13 @@ namespace RHI {
         }
     }
 
-    void VulkanBarrier::recordTextureBarrier(VkCommandBuffer commandBuffer, PipelineStage stage, 
+    void VulkanBarrier::recordTextureBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits stage, 
         ResourceAccess access, TextureView* target) 
     {
         bool isBarrierExist = false;
 
         for (auto &&curTextureState : this->curTextureStates) {
-            if (curTextureState.stage == stage && curTextureState.access == access 
-                && curTextureState.target->getTexture() == target->getTexture())
+            if (curTextureState.target->getTexture() == target->getTexture())
             {
                 VkImageLayout newLayout = findImageLayout(stage, access, curTextureState.target->getTexture());
 
@@ -273,8 +271,8 @@ namespace RHI {
 
                 vkCmdPipelineBarrier(
                     commandBuffer,
-                    convertPipelineStageIntoVulkan(curTextureState.stage),
-                    convertPipelineStageIntoVulkan(stage),
+                    curTextureState.stage,
+                    stage,
                     0,
                     0,
                     nullptr,
