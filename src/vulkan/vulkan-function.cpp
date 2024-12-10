@@ -238,6 +238,23 @@ namespace RHI {
         return vulkanImageFlags;
     }
 
+    VkImageLayout convertTextureStateIntoVulkan(TextureState state) {
+        switch (state) {
+            case TextureState::eUndefined : return VK_IMAGE_LAYOUT_UNDEFINED;
+            case TextureState::eStorageBinding : return VK_IMAGE_LAYOUT_GENERAL;
+            case TextureState::eColorAttachment : return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            case TextureState::eDepthAttachment : return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            case TextureState::eStencilAttachment : return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+            case TextureState::eColorTextureBinding : return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            case TextureState::eDepthStencilTextureBinding : return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+            case TextureState::eCopySrc : return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            case TextureState::eCopyDst : return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            case TextureState::ePresent : return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+            default : return VK_IMAGE_LAYOUT_UNDEFINED;
+        }
+    }
+
     VkImageViewType convertTextureViewDimensionIntoVulkan(TextureViewDimension viewDimension) {
         switch (viewDimension) {
             case TextureViewDimension::e1D : return VK_IMAGE_VIEW_TYPE_1D;
@@ -667,5 +684,162 @@ namespace RHI {
             
             default: return VK_INDEX_TYPE_UINT32;
         }
+    }
+
+    VkPipelineStageFlags convertPipelineStageIntoVulkan(PipelineStageFlags stage) {
+        VkPipelineStageFlags pipelineStages = 0;
+
+        if (stage & std::to_underlying(PipelineStage::eCompute)) {
+            pipelineStages |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        }
+
+        if (stage & std::to_underlying(PipelineStage::eVertex)) {
+            pipelineStages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+        }
+
+        if (stage & std::to_underlying(PipelineStage::eFragment)) {
+            pipelineStages |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        }
+
+        if (stage & std::to_underlying(PipelineStage::eTessellCtrl)) {
+            pipelineStages |= VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
+        }
+
+        if (stage & std::to_underlying(PipelineStage::eTessellEval)) {
+            pipelineStages |= VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+        }
+
+        if (stage & std::to_underlying(PipelineStage::eTask)) {
+            pipelineStages |= VK_PIPELINE_STAGE_TASK_SHADER_BIT_EXT;
+        }
+
+        if (stage & std::to_underlying(PipelineStage::eMesh)) {
+            pipelineStages |= VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT;
+        }
+
+        if (stage & std::to_underlying(PipelineStage::eTransfer)) {
+            pipelineStages |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }
+
+        if (stage & std::to_underlying(PipelineStage::eAttachmentOutput)) {
+            pipelineStages |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        }
+
+        if (stage & std::to_underlying(PipelineStage::eEarlyFragmentTest)) {
+            pipelineStages |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        }
+
+        if (stage & std::to_underlying(PipelineStage::eLateFragmentTest)) {
+            pipelineStages |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        }
+
+        return pipelineStages;
+    }
+
+    VkAccessFlags convertBufferAccessIntoVulkan(PipelineStageFlags stage, ResourceAccess access, Buffer *buffer) {
+        if (stage & std::to_underlying(PipelineStage::eTransfer) && access == ResourceAccess::eReadOnly) {
+            return VK_ACCESS_TRANSFER_READ_BIT;
+        } 
+        
+        else if (stage & std::to_underlying(PipelineStage::eTransfer) && access == ResourceAccess::eWriteOnly) {
+            return VK_ACCESS_TRANSFER_WRITE_BIT;
+        } 
+        
+        else if (stage & std::to_underlying(PipelineStage::eTransfer) && access == ResourceAccess::eReadWrite) {
+            return VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+        } 
+        
+        else if (stage & std::to_underlying(PipelineStage::eVertex) && buffer->getDesc().usage & std::to_underlying(BufferUsage::eVertex)) {
+            return VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+        } 
+        
+        else if (stage & std::to_underlying(PipelineStage::eVertex) && buffer->getDesc().usage & std::to_underlying(BufferUsage::eIndex)) {
+            return VK_ACCESS_INDEX_READ_BIT;
+        }
+
+        else if (stage & std::to_underlying(PipelineStage::eVertex) && buffer->getDesc().usage & std::to_underlying(BufferUsage::eIndirect)) {
+            return VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+        } 
+        
+        else if (buffer->getDesc().usage & std::to_underlying(BufferUsage::eUniform)) {
+            return VK_ACCESS_UNIFORM_READ_BIT;
+        }
+
+        else if (access == ResourceAccess::eReadOnly) {
+            return VK_ACCESS_SHADER_READ_BIT;
+        }
+
+        else if (access == ResourceAccess::eWriteOnly) {
+            return VK_ACCESS_SHADER_WRITE_BIT;
+        }
+        
+        return VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+    }
+
+    VkAccessFlags convertTextureAccessIntoVulkan(PipelineStageFlags stage, ResourceAccess access, Texture *texture) 
+    {
+        if (stage & std::to_underlying(PipelineStage::eTransfer) && access == ResourceAccess::eReadOnly) {
+            return VK_ACCESS_TRANSFER_READ_BIT;
+        } 
+        
+        else if (stage & std::to_underlying(PipelineStage::eTransfer) && access == ResourceAccess::eWriteOnly) {
+            return VK_ACCESS_TRANSFER_WRITE_BIT;
+        } 
+        
+        else if (stage & std::to_underlying(PipelineStage::eTransfer) && access == ResourceAccess::eReadWrite) {
+            return VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+        }
+
+        else if (stage & std::to_underlying(PipelineStage::eAttachmentOutput) 
+            && texture->getDesc().usage & std::to_underlying(TextureUsage::eColorAttachment)
+            && access == ResourceAccess::eReadOnly) 
+        {
+            return VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+        }
+
+        else if (stage & std::to_underlying(PipelineStage::eAttachmentOutput) 
+            && texture->getDesc().usage & std::to_underlying(TextureUsage::eColorAttachment)
+            && access == ResourceAccess::eWriteOnly) 
+        {
+            return VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        }
+
+        else if (stage & std::to_underlying(PipelineStage::eAttachmentOutput) 
+            && texture->getDesc().usage & std::to_underlying(TextureUsage::eColorAttachment)
+            && access == ResourceAccess::eReadWrite) 
+        {
+            return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        }
+
+        else if ((stage & std::to_underlying(PipelineStage::eEarlyFragmentTest) || stage & std::to_underlying(PipelineStage::eLateFragmentTest)) 
+            && texture->getDesc().usage & std::to_underlying(TextureUsage::eDepthStencilAttachment)
+            && access == ResourceAccess::eReadOnly) 
+        {
+            return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        }
+
+        else if ((stage & std::to_underlying(PipelineStage::eEarlyFragmentTest) || stage & std::to_underlying(PipelineStage::eLateFragmentTest))
+            && texture->getDesc().usage & std::to_underlying(TextureUsage::eDepthStencilAttachment)
+            && access == ResourceAccess::eWriteOnly) 
+        {
+            return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        }
+
+        else if ((stage & std::to_underlying(PipelineStage::eEarlyFragmentTest) || stage & std::to_underlying(PipelineStage::eLateFragmentTest))
+            && texture->getDesc().usage & std::to_underlying(TextureUsage::eDepthStencilAttachment)
+            && access == ResourceAccess::eReadWrite) 
+        {
+            return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        }
+
+        else if (access == ResourceAccess::eReadOnly) {
+            return VK_ACCESS_SHADER_READ_BIT;
+        }
+
+        else if (access == ResourceAccess::eWriteOnly) {
+            return VK_ACCESS_SHADER_WRITE_BIT;
+        }
+        
+        return VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
     }
 }

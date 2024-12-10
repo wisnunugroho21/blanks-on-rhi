@@ -57,7 +57,7 @@ namespace RHI {
     typedef uint32_t TextureUsageFlags;
     typedef uint32_t BufferUsageFlags;
     typedef uint32_t ShaderStageFlags;
-    typedef uint32_t PipelinerStageFlags;
+    typedef uint32_t PipelineStageFlags;
     typedef uint32_t ColorWriteFlags;
     typedef uint32_t ResolveModeFlags;
 
@@ -224,70 +224,6 @@ namespace RHI {
         eD24Plus,
         eD24PlusS8Uint,
         eD32Sfloat,
-
-        // "depth32float-stencil8" feature
-        eD32SFloatS8Uint,
-
-        // BC compressed formats usable if "texture-compression-bc" is both
-        // supported by the device/user agent and enabled in requestDevice.
-        eBC1RGBAUnorm,
-        eBC1RGBAUnormSrgb,
-        eBC2RGBAUnorm,
-        eBC2RGBAUnormSrgb,
-        eBC3RGBAUnorm,
-        eBC3RGBAUnormSrgb,
-        eBC4RUnorm,
-        eBC4RSnorm,
-        eBC5RGUnorm,
-        eBC5RGSnorm,
-        eBC6HRGBUfloat,
-        eBC6HRGBSfloat,
-        eBC7RGBAUnorm,
-        eBC7RGBAUnormSrgb,
-
-        // ETC2 compressed formats usable if "texture-compression-etc2" is both
-        // supported by the device/user agent and enabled in requestDevice.
-        eETC2RGB8Unorm,
-        eETC2RGB8UnormSrgb,
-        eETC2RGB8A1Unorm,
-        eETC2RGB8A1UnormSrgb,
-        eETC2RGBA8Unorm,
-        eETC2RGBA8UnormSrgb,
-        eEACR11Unorm,
-        eEACR11Snorm,
-        eEACRG11Unorm,
-        eEACRG11Snorm,
-
-        // ASTC compressed formats usable if "texture-compression-astc" is both
-        // supported by the device/user agent and enabled in requestDevice.
-        eASTC4X4Unorm,
-        eASTC4X4UnormSrgb,
-        eASTC5X4Unorm,
-        eASTC5X4UnormSrgb,
-        eASTC5X5Unorm,
-        eASTC5X5UnormSrgb,
-        eASTC6X5Unorm,
-        eASTC6X5UnormSrgb,
-        eASTC6X6Unorm,
-        eASTC6X6UnormSrgb,
-        eASTC8X5Unorm,
-        eASTC8X5UnormSrgb,
-        eASTC8X6Unorm,
-        eASTC8X6UnormSrgb,
-        eASTC8X8Unorm,
-        eASTC8X8UnormSrgb,
-        eASTC10X5Unorm,
-        eASTC10X5UnormSrgb,
-        eASTC10X6Unorm,
-        eASTC10X6UnormSrgb,
-        eASTC10X8Unorm,
-        eASTC10X8UnormSrgb,
-        eASTC10X10Unorm,
-        eASTC10X10UnormSrgb,
-        eASTC12X10Unorm,
-        eASTC12X10UnormSrgb,    
-        eASTC12X12Unorm,
-        eASTC12X12UnormSrgb
     };
 
     enum class TextureDimension : Uint8 {
@@ -321,6 +257,19 @@ namespace RHI {
         eDepthStencilAttachment = 0x20
     };
 
+    enum class TextureState : Uint8 {
+        eUndefined,
+        eColorAttachment,
+        eDepthAttachment,
+        eStencilAttachment,
+        eColorTextureBinding,
+        eDepthStencilTextureBinding,
+        eStorageBinding,
+        eCopySrc,
+        eCopyDst,
+        ePresent
+    };
+
     struct TextureDescriptor {
         Extent3D size;
         TextureFormat format;
@@ -331,6 +280,7 @@ namespace RHI {
         Uint32 sampleCount = 1;
 
         TextureDimension dimension = TextureDimension::e2D;
+        TextureState initialState = TextureState::eUndefined;
     };
 
     struct TextureSubresource {
@@ -888,6 +838,66 @@ namespace RHI {
     };
 
     // ===========================================================================================================================
+    // Barrier
+    // ===========================================================================================================================
+
+    enum class ResourceAccess : Uint8 {
+        eWriteOnly,
+        eReadOnly,
+        eReadWrite
+    };
+
+    enum class PipelineStage : FlagsConstant {
+        eCompute            = 0x0001,
+        eVertex             = 0x0002,
+        eFragment           = 0x0004,
+        eTessellCtrl        = 0x0008,
+        eTessellEval        = 0x0010,
+        eTask               = 0x0020,
+        eMesh               = 0x0040,
+        eTransfer           = 0x0080,
+        eAttachmentOutput   = 0x0100,
+        eEarlyFragmentTest  = 0x0200,
+        eLateFragmentTest   = 0x0400,
+    };
+    
+    struct MemoryBarrier {
+        ResourceAccess srcAccess;
+        ResourceAccess dstAccess;
+    };
+
+    struct BufferBarrier : MemoryBarrier {
+        Buffer* buffer;
+        uint64_t size = ULLONG_MAX;
+        uint64_t offset = 0;
+    };
+
+    struct ImageBarrier : MemoryBarrier {
+        TextureView* textureView;
+        TextureState srcState;
+        TextureState dstState;
+    };
+
+    class BarrierCommandsMixin {
+        virtual void activatePipelineBarrier(
+            PipelineStageFlags srcStage,
+            PipelineStageFlags dstStage
+        ) = 0;
+
+        virtual void activateBufferBarrier(
+            PipelineStageFlags srcStage,
+            PipelineStageFlags dstStage,
+            BufferBarrier desc
+        ) = 0;
+
+        virtual void activateTextureBarrier(
+            PipelineStageFlags srcStage,
+            PipelineStageFlags dstStage,
+            ImageBarrier desc
+        ) = 0;
+    };
+
+    // ===========================================================================================================================
     // Command Encoder
     // ===========================================================================================================================
 
@@ -906,7 +916,7 @@ namespace RHI {
         virtual CommandState getCommandState() = 0;
     };
 
-    class CommandEncoder : public CommandsMixin {
+    class CommandEncoder : public CommandsMixin, public BarrierCommandsMixin {
     public:
         virtual CommandEncoderDescriptor getDesc() = 0;
 

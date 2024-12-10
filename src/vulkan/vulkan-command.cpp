@@ -17,6 +17,73 @@ namespace RHI {
         );
     }
 
+    void VulkanCommandEncoder::activatePipelineBarrier(PipelineStageFlags srcStage,PipelineStageFlags dstStage) {
+        vkCmdPipelineBarrier(
+            this->commandBuffer,
+            convertPipelineStageIntoVulkan(srcStage),
+            convertPipelineStageIntoVulkan(dstStage),
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            0,
+            nullptr
+        );
+    }
+
+    void VulkanCommandEncoder::activateBufferBarrier(PipelineStageFlags srcStage,PipelineStageFlags dstStage, BufferBarrier desc) {
+        VkBufferMemoryBarrier bufferBarrier{
+          .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+          .srcAccessMask = convertBufferAccessIntoVulkan(srcStage, desc.srcAccess, desc.buffer),
+          .dstAccessMask = convertBufferAccessIntoVulkan(dstStage, desc.dstAccess, desc.buffer),
+          .buffer = dynamic_cast<VulkanBuffer*>(desc.buffer)->getNative(),
+          .offset = desc.offset,
+          .size = desc.size
+        };
+
+        vkCmdPipelineBarrier(
+            this->commandBuffer,
+            convertPipelineStageIntoVulkan(srcStage),
+            convertPipelineStageIntoVulkan(dstStage),
+            0,
+            0,
+            nullptr,
+            1,
+            &bufferBarrier,
+            0,
+            nullptr
+        );
+    }
+
+    void VulkanCommandEncoder::activateTextureBarrier(PipelineStageFlags srcStage, PipelineStageFlags dstStage, ImageBarrier desc) {
+        VkImageMemoryBarrier imageBarrier{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .srcAccessMask = convertTextureAccessIntoVulkan(srcStage, desc.srcAccess, desc.textureView->getTexture()),
+            .dstAccessMask = convertTextureAccessIntoVulkan(dstStage, desc.dstAccess, desc.textureView->getTexture()),
+            .oldLayout = convertTextureStateIntoVulkan(desc.srcState),
+            .newLayout = convertTextureStateIntoVulkan(desc.dstState),
+            .subresourceRange.aspectMask = convertAspectIntoVulkan(desc.textureView->getDesc().subresource.aspect),
+            .subresourceRange.baseArrayLayer = desc.textureView->getDesc().subresource.baseArrayLayer,
+            .subresourceRange.layerCount = desc.textureView->getDesc().subresource.arrayLayerCount,
+            .subresourceRange.baseMipLevel = desc.textureView->getDesc().subresource.baseMipLevel,
+            .subresourceRange.levelCount = desc.textureView->getDesc().subresource.mipLevelCount
+        };
+
+        vkCmdPipelineBarrier(
+            this->commandBuffer,
+            convertPipelineStageIntoVulkan(srcStage),
+            convertPipelineStageIntoVulkan(dstStage),
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &imageBarrier
+        );
+    }
+
     void VulkanCommandEncoder::copyBufferToTexture(ImageCopyBuffer source, ImageCopyTexture destination, Extent3D copySize) {
 
     }

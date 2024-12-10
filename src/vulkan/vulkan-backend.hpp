@@ -388,40 +388,7 @@ namespace RHI {
         VulkanDevice* device;
         VkPipeline pipeline;
     };
-
-    // ===========================================================================================================================
-    // Barrier
-    // ===========================================================================================================================
-
-    struct BufferBarrierState {
-        VkPipelineStageFlagBits stage;
-        ResourceAccess access;
-        BufferInfo desc;
-    };
-
-    struct TextureBarrierState {
-        VkPipelineStageFlagBits stage;
-        ResourceAccess access;
-        TextureView* target;
-    };
-
-    class VulkanBarrier {
-    public:
-        void recordBufferBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits stage, 
-            ResourceAccess access, BufferInfo desc);
-
-        void recordTextureBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits stage, 
-            ResourceAccess access, TextureView* target);
-
-    private:
-        std::vector<BufferBarrierState> curBufferStates;
-        std::vector<TextureBarrierState> curTextureStates;
-    };
-
-    // ===========================================================================================================================
-    // Command Encoder
-    // ===========================================================================================================================
-
+    
     class VulkanCommandEncoder : public CommandEncoder {
     public:
         VulkanCommandEncoder(
@@ -445,6 +412,23 @@ namespace RHI {
 
         std::shared_ptr<RenderPassEncoder> beginRenderPass(RenderPassDescriptor desc) override;
         std::shared_ptr<ComputePassEncoder> beginComputePass(ComputePassDescriptor desc) override;
+
+        void activatePipelineBarrier(
+            PipelineStageFlags srcStage,
+            PipelineStageFlags dstStage
+        )  override;
+
+        void activateBufferBarrier(
+            PipelineStageFlags srcStage,
+            PipelineStageFlags dstStage,
+            BufferBarrier desc
+        )  override;
+
+        void activateTextureBarrier(
+            PipelineStageFlags srcStage,
+            PipelineStageFlags dstStage,
+            ImageBarrier desc
+        )  override;
 
         void copyBufferToBuffer(
             Buffer* source,
@@ -487,7 +471,6 @@ namespace RHI {
 
     protected:
         CommandEncoderDescriptor desc;
-        VulkanBarrier *barrier;
 
     private:
         VulkanDevice* device;
@@ -657,6 +640,8 @@ namespace RHI {
 
     VkImageUsageFlags convertImageUsageIntoVulkan(TextureUsageFlags usage);
 
+    VkImageLayout convertTextureStateIntoVulkan(TextureState state);
+
     VkImageViewType convertTextureViewDimensionIntoVulkan(TextureViewDimension viewDimension);
 
     VkImageAspectFlags convertAspectIntoVulkan(TextureAspect aspect);
@@ -720,4 +705,10 @@ namespace RHI {
     VkAttachmentStoreOp convertStoreOpIntoVulkan(StoreOp storeOp);
 
     VkIndexType convertIndexFormatIntoVulkan(IndexFormat format);
+
+    VkPipelineStageFlags convertPipelineStageIntoVulkan(PipelineStageFlags stage);
+
+    VkAccessFlags convertBufferAccessIntoVulkan(PipelineStageFlags stage, ResourceAccess access, Buffer *buffer);
+
+    VkAccessFlags convertTextureAccessIntoVulkan(PipelineStageFlags stage, ResourceAccess access, Texture *texture);
 }
