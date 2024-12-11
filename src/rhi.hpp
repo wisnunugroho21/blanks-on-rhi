@@ -860,22 +860,24 @@ namespace RHI {
         eEarlyFragmentTest  = 0x0200,
         eLateFragmentTest   = 0x0400,
     };
-    
-    struct MemoryBarrier {
+
+    struct BufferBarrier {
+        Buffer* buffer;
+        uint64_t size = ULLONG_MAX;
+        uint64_t offset = 0;
+
         ResourceAccess srcAccess;
         ResourceAccess dstAccess;
     };
 
-    struct BufferBarrier : MemoryBarrier {
-        Buffer* buffer;
-        uint64_t size = ULLONG_MAX;
-        uint64_t offset = 0;
-    };
-
-    struct ImageBarrier : MemoryBarrier {
+    struct ImageBarrier {
         TextureView* textureView;
+
         TextureState srcState;
         TextureState dstState;
+
+        ResourceAccess srcAccess;
+        ResourceAccess dstAccess;
     };
 
     class BarrierCommandsMixin {

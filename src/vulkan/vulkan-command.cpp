@@ -105,7 +105,7 @@ namespace RHI {
     }
 
     void VulkanCommandEncoder::finish() {
-
+        vkEndCommandBuffer(this->commandBuffer);
     }
 
     VulkanCommandEncoder::~VulkanCommandEncoder() {
