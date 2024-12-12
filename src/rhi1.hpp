@@ -891,14 +891,14 @@ struct GPUImageDataLayout {
     uint32_t rowsPerImage;
 };
 
-struct GPUImageCopyTexture {
+struct GPUCopyTexture {
     GPUTexture* texture;
     GPUIntegerCoordinate mipLevel = 0;
     GPUOrigin3D origin = {};
     GPUTextureAspect aspect = GPUTextureAspect::All;
 };
 
-struct GPUImageCopyBuffer : GPUImageDataLayout {
+struct GPUCopyBuffer : GPUImageDataLayout {
     GPUBuffer* buffer;
 };
 
@@ -934,21 +934,21 @@ class GPUCommandEncoder : GPUCommandsMixin, GPUDebugCommandsMixin {
         GPUSize64 size) = 0;
 
     virtual void copyBufferToTexture(
-        GPUImageCopyBuffer source,
-        GPUImageCopyTexture destination,
+        GPUCopyBuffer source,
+        GPUCopyTexture destination,
         GPUExtent3D copySize) = 0;
 
     virtual void copyTextureToBuffer(
-        GPUImageCopyTexture source,
-        GPUImageCopyBuffer destination,
+        GPUCopyTexture source,
+        GPUCopyBuffer destination,
         GPUExtent3D copySize) = 0;
 
     virtual void copyTextureToTexture(
-        GPUImageCopyTexture source,
-        GPUImageCopyTexture destination,
+        GPUCopyTexture source,
+        GPUCopyTexture destination,
         GPUExtent3D copySize) = 0;
 
-    virtual void clearBuffer(
+    virtual void fillBuffer(
         GPUBuffer buffer,
         GPUSize64 size,
         GPUSize64 offset = 0
@@ -1130,7 +1130,7 @@ class GPUQueue {
     ) = 0;
 
     virtual void writeTexture(
-        GPUImageCopyTexture destination,
+        GPUCopyTexture destination,
         void* data,
         GPUImageDataLayout dataLayout,
         GPUExtent3D size

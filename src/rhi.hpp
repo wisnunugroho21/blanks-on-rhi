@@ -303,6 +303,7 @@ namespace RHI {
     class Texture {
     public:
         virtual TextureDescriptor getDesc() = 0;
+        virtual TextureState getState() = 0;
 
         virtual std::shared_ptr<TextureView> createView(TextureViewDescriptor desc) = 0;
     };
@@ -431,7 +432,7 @@ namespace RHI {
     };
 
     struct TextureBindGroupItem {
-        TextureView* textureView;
+        TextureView* view;
         ResourceAccess access = ResourceAccess::eReadOnly;
     };
 
@@ -824,12 +825,12 @@ namespace RHI {
     // Copies
     // ===========================================================================================================================
 
-    struct ImageCopyTexture {
-        TextureView* texture;
+    struct CopyTexture {
+        TextureView* view;
         Origin3D origin{};
     };
 
-    struct ImageCopyBuffer {
+    struct CopyBuffer {
         Buffer* buffer;
 
         Uint64 offset = 0;
@@ -870,8 +871,8 @@ namespace RHI {
         ResourceAccess dstAccess;
     };
 
-    struct ImageBarrier {
-        TextureView* textureView;
+    struct TextureBarrier {
+        TextureView* view;
 
         TextureState srcState;
         TextureState dstState;
@@ -895,7 +896,7 @@ namespace RHI {
         virtual void activateTextureBarrier(
             PipelineStageFlags srcStage,
             PipelineStageFlags dstStage,
-            ImageBarrier desc
+            TextureBarrier desc
         ) = 0;
     };
 
@@ -934,24 +935,25 @@ namespace RHI {
         ) = 0;
 
         virtual void copyBufferToTexture(
-            ImageCopyBuffer source,
-            ImageCopyTexture destination,
+            CopyBuffer source,
+            CopyTexture destination,
             Extent3D copySize
         ) = 0;
 
         virtual void copyTextureToBuffer(
-            ImageCopyTexture source,
-            ImageCopyBuffer destination,
+            CopyTexture source,
+            CopyBuffer destination,
             Extent3D copySize
         ) = 0;
 
         virtual void copyTextureToTexture(
-            ImageCopyTexture source,
-            ImageCopyTexture destination,
+            CopyTexture source,
+            CopyTexture destination,
             Extent3D copySize
         ) = 0;
 
-        virtual void clearBuffer(
+        virtual void fillBuffer(
+            Uint32 data,
             Buffer* buffer,
             Uint64 size = ULLONG_MAX,
             Uint64 offset = 0

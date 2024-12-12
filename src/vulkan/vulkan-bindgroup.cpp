@@ -103,7 +103,7 @@ namespace RHI {
                 std::vector<VkDescriptorImageInfo> curImageInfos{};
 
                 for (auto &&groupItem : textureEntry.groupItems) {
-                    VulkanTextureView* txtView = dynamic_cast<VulkanTextureView*>(groupItem.textureView);
+                    VulkanTextureView* txtView = dynamic_cast<VulkanTextureView*>(groupItem.view);
                     VkDescriptorImageInfo imageInfo{};
 
                     imageInfo.imageView = txtView->getNative();

@@ -135,13 +135,14 @@ namespace RHI {
 
         std::shared_ptr<TextureView> createView(TextureViewDescriptor descriptor) override;
 
+        void setState(TextureState state) { this->state = state; }
+
         VkImage getNative() { return this->image; }
         VmaAllocation getMemoryAllocation() { return this->memoryAllocation; }
 
-        VkImageLayout layout;
-
     protected:
         TextureDescriptor desc;
+        TextureState state;
 
     private:
         VulkanDevice* device;
@@ -427,7 +428,7 @@ namespace RHI {
         void activateTextureBarrier(
             PipelineStageFlags srcStage,
             PipelineStageFlags dstStage,
-            ImageBarrier desc
+            TextureBarrier desc
         )  override;
 
         void copyBufferToBuffer(
@@ -438,21 +439,22 @@ namespace RHI {
             Uint64 size) override;
 
         void copyBufferToTexture(
-            ImageCopyBuffer source,
-            ImageCopyTexture destination,
+            CopyBuffer source,
+            CopyTexture destination,
             Extent3D copySize) override;
 
         void copyTextureToBuffer(
-            ImageCopyTexture source,
-            ImageCopyBuffer destination,
+            CopyTexture source,
+            CopyBuffer destination,
             Extent3D copySize) override;
 
         void copyTextureToTexture(
-            ImageCopyTexture source,
-            ImageCopyTexture destination,
+            CopyTexture source,
+            CopyTexture destination,
             Extent3D copySize) override;
 
-        void clearBuffer(
+        void fillBuffer(
+            Uint32 data,
             Buffer* buffer,
             Uint64 size = ULLONG_MAX,
             Uint64 offset = 0
