@@ -354,5 +354,7 @@ namespace RHI {
                 }
             }
         }
+
+        return std::make_shared<VulkanRenderGraph>(desc, this, renderPassNodes);
     }
 }
