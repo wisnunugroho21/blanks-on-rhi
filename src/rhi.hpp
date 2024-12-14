@@ -1,4 +1,4 @@
-#pragma once
+#pragma onceRenderGraphDescriptor
 
 #include <string>
 #include <memory>
@@ -10,36 +10,28 @@ namespace RHI {
     // Class Definition
     // ===========================================================================================================================
 
-    class Buffer;
+    /* class Buffer;
     class Texture;
     class TextureView;
     class Sampler;
-    class BindGroupLayout;
-    class BindGroup;
-    class PipelineLayout;
-    class ShaderModule;
-    class PipelineBase;
-    class ProgrammableStage;
-    class Queue;
-    class CommandBuffer;
-    class CommandsMixin;
-    class RenderPassEncoder;
-    class ComputePassEncoder;
-    class RenderBundle;
-    class Queue;
-    class Device;
-    class Adapter;
+    class RenderGraph;
+
+    struct RenderGraphDescriptor;
+    struct RenderPassDescriptor;
+    struct RenderPipelineDescriptor;
+    struct BindGroupDescriptor;
 
     struct RenderPassColorAttachment;
     struct RenderPassDepthStencilAttachment;
     struct RenderPassDescriptor;
     struct ComputePassDescriptor;
 
-    enum class QueueType : uint8_t;
+    enum class QueueType : uint8_t; */
 
     // ===========================================================================================================================
     // Basic Type
     // ===========================================================================================================================
+    
     typedef const char* String;
     typedef uint8_t Uint8;
     typedef uint16_t Uint16;
@@ -109,6 +101,10 @@ namespace RHI {
         Int32 y;
         Uint32 width;
         Uint32 height;
+    };
+
+    struct BaseDescriptor {
+        String label = "";
     };
 
     // ===========================================================================================================================
@@ -379,7 +375,7 @@ namespace RHI {
     };
 
     // ===========================================================================================================================
-    // Resource Binding
+    // Bind Group
     // ===========================================================================================================================
 
     enum class ShaderStage : FlagsConstant {
@@ -406,7 +402,7 @@ namespace RHI {
         eReadWrite
     };
 
-    struct BindGroupLayoutEntry {
+    struct BindGroupDescriptorEntry {
         Uint32 binding;
         ShaderStageFlags shaderStage;
         BindingType type;
@@ -414,74 +410,8 @@ namespace RHI {
         Uint32 bindCount = 1;
     };
 
-    struct BindGroupLayoutDescriptor {
-        std::vector<BindGroupLayoutEntry> entries;
-    };
-
-    class BindGroupLayout {
-    public:
-        virtual BindGroupLayoutDescriptor getDesc() = 0;
-    };
-
-    struct BufferBindGroupItem {
-        Buffer* buffer;
-
-        Uint64 size = ULLONG_MAX;
-        Uint64 offset = 0;
-        ResourceAccess access = ResourceAccess::eReadOnly;
-    };
-
-    struct TextureBindGroupItem {
-        TextureView* view;
-        ResourceAccess access = ResourceAccess::eReadOnly;
-    };
-
-    struct SamplerBindGroupItem {
-        Sampler* sampler;
-    };
-
-    struct BufferBindGroupEntry {
-        Uint32 binding;
-        std::vector<BufferBindGroupItem> groupItems;
-    };
-
-    struct TextureBindGroupEntry {
-        Uint32 binding;
-        std::vector<TextureBindGroupItem> groupItems;
-    };
-
-    struct SamplerBindGroupEntry {
-        Uint32 binding;
-        std::vector<SamplerBindGroupItem> groupItems;
-    };
-
-    struct BindGroupDescriptor {
-        BindGroupLayout* layout;
-
-        std::vector<BufferBindGroupEntry> buffers;
-        std::vector<TextureBindGroupEntry> textures;
-        std::vector<SamplerBindGroupEntry> samplers;
-    };
-
-    struct ConstantLayout {
-        ShaderStageFlags shaderStage;
-        Uint32 size = ULLONG_MAX;
-        Uint32 offset = 0;
-    };
-
-    struct PipelineLayoutDescriptor {
-        std::vector<BindGroupLayout*> bindGroupLayouts;
-        std::vector<ConstantLayout> constantLayouts;
-    };
-
-    class BindGroup {
-    public:
-        virtual BindGroupDescriptor getDesc() =  0;
-    };
-
-    class PipelineLayout {
-    public:
-        virtual PipelineLayoutDescriptor getDesc() = 0;
+    struct BindGroupLayoutDescriptor : BaseDescriptor {
+        std::vector<BindGroupDescriptorEntry> entries;
     };
 
     // ===========================================================================================================================
@@ -762,17 +692,8 @@ namespace RHI {
         bool stencilReference = false;
     };
 
-    struct ProgrammableStage{
-        ShaderModule* module;
-    };
-
-    struct ComputePipelineDescriptor {
-        PipelineLayout* layout;
-        ProgrammableStage compute;
-    };
-
-    struct RenderPipelineDescriptor {
-        PipelineLayout* layout;
+    struct RenderPipelineDescriptor : BaseDescriptor {
+        std::vector<BindGroupLayoutDescriptor> bindGroupLayouts;
 
         VertexState vertex;
         FragmentState fragment;
@@ -786,118 +707,70 @@ namespace RHI {
         DynamicStateEnabledState dynamicState{};
     };
 
-    class PipelineBase {
-        virtual BindGroupLayout* getBindGroupLayout(Uint32 index) = 0;
+    // ===========================================================================================================================
+    // Render Pass
+    // ===========================================================================================================================
+
+    enum class LoadOp : Uint8 {
+        eLoad,
+        eClear
     };
 
-    class ComputePipeline : public PipelineBase {
+    enum class StoreOp : Uint8 {
+        eStore,
+        eDiscard
+    };
+
+    enum class ResolveMode : FlagsConstant {
+        eAverage    = 0x0001,
+        eMin        = 0x0002,
+        eMax        = 0x0004
+    };
+
+    struct RenderPassColorAttachment {
+        TextureView* targetView;
+        TextureView* resolveTargetView;
+        ResolveMode resolveMode;
+
+        Color clearValue;
+        LoadOp loadOp;
+        StoreOp storeOp;
+    };
+
+    struct RenderPassDepthStencilAttachment {
+        TextureView* targetView;
+
+        float depthClearValue;
+        LoadOp depthLoadOp;
+        StoreOp depthStoreOp;
+
+        bool depthReadOnly = false;
+
+        Uint32 stencilClearValue;
+        LoadOp stencilLoadOp;
+        StoreOp stencilStoreOp;
+
+        bool stencilReadOnly = false;
+    };
+
+    struct RenderPassDescriptor : BaseDescriptor {
+        std::vector<RenderPipelineDescriptor> renderPipelines;
+
+        std::vector<RenderPassColorAttachment> colorAttachments;
+        RenderPassDepthStencilAttachment depthStencilAttachment;
+    };
+
+    // ===========================================================================================================================
+    // Render Graph
+    // ===========================================================================================================================
+
+    struct RenderGraphDescriptor : BaseDescriptor {
+        std::vector<RenderPassDescriptor> renderPasses;
+    };
+
+    class RenderGraph {
     public:
-        virtual ComputePipelineDescriptor getDesc() = 0;
-    };
-
-    class RenderPipeline : public PipelineBase {
-    public:
-        virtual RenderPipelineDescriptor getDesc() = 0;
-
-        bool writesDepth;
-        bool writesStencil;
-    };
-
-    // ===========================================================================================================================
-    // Query
-    // ===========================================================================================================================
-
-    enum class QueryType : Uint8 {
-        Occulusion,
-        Timestamp
-    };
-
-    struct QuerySetDescriptor {
-        QueryType type;
-        Uint32 count;
-    };
-
-    class QuerySet {    
-        QuerySetDescriptor desc;
-    };
-
-    // ===========================================================================================================================
-    // Copies
-    // ===========================================================================================================================
-
-    struct CopyTexture {
-        TextureView* view;
-        Origin3D origin{};
-    };
-
-    struct CopyBuffer {
-        Buffer* buffer;
-
-        Uint64 offset = 0;
-        Uint32 bytesPerRow;
-        Uint32 rowsPerImage;
-    };
-
-    // ===========================================================================================================================
-    // Barrier
-    // ===========================================================================================================================
-
-    enum class ResourceAccess : Uint8 {
-        eWriteOnly,
-        eReadOnly,
-        eReadWrite
-    };
-
-    enum class PipelineStage : FlagsConstant {
-        eCompute            = 0x0001,
-        eVertex             = 0x0002,
-        eFragment           = 0x0004,
-        eTessellCtrl        = 0x0008,
-        eTessellEval        = 0x0010,
-        eTask               = 0x0020,
-        eMesh               = 0x0040,
-        eTransfer           = 0x0080,
-        eAttachmentOutput   = 0x0100,
-        eEarlyFragmentTest  = 0x0200,
-        eLateFragmentTest   = 0x0400,
-    };
-
-    struct BufferBarrier {
-        Buffer* buffer;
-        uint64_t size = ULLONG_MAX;
-        uint64_t offset = 0;
-
-        ResourceAccess srcAccess;
-        ResourceAccess dstAccess;
-    };
-
-    struct TextureBarrier {
-        TextureView* view;
-
-        TextureState srcState;
-        TextureState dstState;
-
-        ResourceAccess srcAccess;
-        ResourceAccess dstAccess;
-    };
-
-    class BarrierCommandsMixin {
-        virtual void activatePipelineBarrier(
-            PipelineStageFlags srcStage,
-            PipelineStageFlags dstStage
-        ) = 0;
-
-        virtual void activateBufferBarrier(
-            PipelineStageFlags srcStage,
-            PipelineStageFlags dstStage,
-            BufferBarrier desc
-        ) = 0;
-
-        virtual void activateTextureBarrier(
-            PipelineStageFlags srcStage,
-            PipelineStageFlags dstStage,
-            TextureBarrier desc
-        ) = 0;
+        virtual RenderGraphDescriptor getDesc() = 0;
     };
 
     // ===========================================================================================================================
@@ -914,17 +787,27 @@ namespace RHI {
         QueueType queueType;
     };
 
+    struct CopyTexture {
+        TextureView* view;
+        Origin3D origin{};
+    };
+
+    struct CopyBuffer {
+        Buffer* buffer;
+
+        Uint64 offset = 0;
+        Uint32 bytesPerRow;
+        Uint32 rowsPerImage;
+    };
+
     class CommandsMixin {
     public:
         virtual CommandState getCommandState() = 0;
     };
 
-    class CommandEncoder : public CommandsMixin, public BarrierCommandsMixin {
+    class CommandEncoder : public CommandsMixin {
     public:
         virtual CommandEncoderDescriptor getDesc() = 0;
-
-        virtual std::shared_ptr<RenderPassEncoder> beginRenderPass(RenderPassDescriptor desc) = 0;
-        virtual std::shared_ptr<ComputePassEncoder> beginComputePass(ComputePassDescriptor desc) = 0;
 
         virtual void copyBufferToBuffer(
             Buffer* source,
@@ -959,202 +842,7 @@ namespace RHI {
             Uint64 offset = 0
         ) = 0;
 
-        virtual void resolveQuerySet(
-            QuerySet querySet,
-            Uint32 firstQuery,
-            Uint32 queryCount,
-            Buffer* destination,
-            Uint64 destinationOffset
-        ) = 0;
-
         virtual void finish() = 0;
-    };
-
-    // ===========================================================================================================================
-    // Programmable Passes
-    // ===========================================================================================================================
-
-    class BindingCommandsMixin {
-        virtual void setBindGroup(BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets = {}) = 0;
-
-        virtual void setBindGroup(std::vector<BindGroup*> bindGroup, std::vector<Uint32> dynamicOffsets = {}) = 0;
-    };
-
-    struct ExecutionPassTimestampWrites {
-        QuerySet* querySet;
-        Uint32 beginningOfPassWriteIndex;
-        Uint32 endOfPassWriteIndex;
-    };
-
-    // ===========================================================================================================================
-    // Compute Passes
-    // ===========================================================================================================================
-
-    struct ComputePassDescriptor {
-        ExecutionPassTimestampWrites timestampWrites;
-    };
-
-    struct ComputeState {
-        ComputePipeline* pipeline;
-        
-        std::vector<BindGroup*> bindGroups;
-        std::vector<Uint32> dynamicOffsets;
-    };
-
-    class ComputePassEncoder : public CommandsMixin, public BindingCommandsMixin {
-    public:
-        virtual ComputePassDescriptor getDesc() = 0;
-        virtual CommandEncoder* getCommandEncoder() = 0;
-        
-        virtual ComputeState getComputeState() = 0;
-
-        virtual void setPipeline(ComputePipeline* pipeline) = 0;
-
-        virtual void dispatchWorkgroups(Uint32 workgroupCountX, Uint32 workgroupCountY = 1, Uint32 workgroupCountZ = 1) = 0;
-        virtual void dispatchWorkgroupsIndirect(Buffer* indirectBuffer, Uint64 indirectOffset) = 0;
-
-        virtual void end() = 0;
-    };
-
-    // ===========================================================================================================================
-    // Render Passes
-    // ===========================================================================================================================
-
-    enum class LoadOp : Uint8 {
-        eLoad,
-        eClear
-    };
-
-    enum class StoreOp : Uint8 {
-        eStore,
-        eDiscard
-    };
-
-    enum class ResolveMode : FlagsConstant {
-        eAverage    = 0x0001,
-        eMin        = 0x0002,
-        eMax        = 0x0004
-    };
-
-    struct RenderPassColorAttachment {
-        TextureView* targetView;
-        TextureView* resolveTargetView;
-        ResolveMode resolveMode;
-
-        Color clearValue;
-        LoadOp loadOp;
-        StoreOp storeOp;
-    };
-
-    struct RenderPassDepthAttachment {
-        TextureView* targetView;
-
-        float clearValue;
-        LoadOp loadOp;
-        StoreOp storeOp;
-
-        bool readOnly = false;
-    };
-
-    struct RenderPassStencilAttachment {
-        TextureView* targetView;
-
-        Uint32 clearValue;
-        LoadOp loadOp;
-        StoreOp storeOp;
-
-        bool readOnly = false;
-    };
-
-    class RenderCommandsMixin {
-        virtual void setPipeline(RenderPipeline* pipeline) = 0;
-
-        virtual void setIndexBuffer(Buffer* buffer, Uint64 offset = 0) = 0;
-
-        virtual void setVertexBuffer(Buffer* buffer, Uint64 offsets = 0) = 0;
-        virtual void setVertexBuffer(std::vector<Buffer*> buffers, std::vector<Uint64> offsets = {}) = 0;
-
-        virtual void draw(Uint32 vertexCount, Uint32 instanceCount = 1,  Uint32 firstVertex = 0, Uint32 firstInstance = 0) = 0;
-        virtual void drawIndexed(Uint32 indexCount, Uint32 instanceCount = 1, Uint32 firstIndex = 0, Int32 baseVertex = 0, 
-            Uint32 firstInstance = 0) = 0;
-
-        virtual void drawIndirect(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Uint64 drawCount = 1) = 0;
-        virtual void drawIndirectCount(Buffer* indirectBuffer, Buffer* countBuffer, Uint64 indirectOffset = 0, Uint64 countOffset = 0) = 0;
-
-        virtual void drawIndexedIndirect(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Uint64 drawCount = 1) = 0;
-        virtual void drawIndexedIndirectCount(Buffer* indirectBuffer, Buffer* countBuffer, Uint64 indirectOffset = 0, Uint64 countOffset = 0) = 0;
-    };
-
-    struct RenderPassDescriptor {
-        std::vector<RenderPassColorAttachment> colorAttachments;
-        RenderPassDepthAttachment depthAttachment;
-        RenderPassStencilAttachment stencilAttachment;
-        
-        QuerySet* occlusionQuerySet;
-        ExecutionPassTimestampWrites timestampWrites;
-
-        Uint64 maxDrawCount = 50000000;
-    };
-
-    struct RenderState {
-        RenderPipeline* pipeline;
-        
-        std::vector<BindGroup*> bindGroups;
-        std::vector<Uint32> dynamicOffsets;
-
-        Buffer* indexBuffer;
-        Uint64 indexOffset;
-
-        std::vector<Buffer*> vertexBuffers;
-        std::vector<Uint64> vertexOffsets;
-
-        std::vector<Viewport> viewports;
-        std::vector<Rect2D> scissors;
-        float lineWidth;
-        DepthBias depthBias;
-        Color blendConstant;
-        float depthBoundMin;
-        float depthBoundMax;
-        Uint32 stencilCompareMask;
-        Uint32 stencilWriteMask;
-        Uint32 stencilReference;
-    };
-
-    class RenderPassEncoder : public CommandsMixin, public BindingCommandsMixin, public RenderCommandsMixin {
-    public:
-        virtual RenderPassDescriptor getDesc() = 0;
-        virtual CommandEncoder* getCommandEncoder() = 0;
-        
-        virtual RenderState getRenderState() = 0;
-
-        virtual void setViewport(float x, float y, float width, float height, float minDepth, float maxDepth) = 0;
-        virtual void setViewport(Viewport viewport) = 0;
-        virtual void setViewport(std::vector<Viewport> viewports) = 0;
-
-        virtual void setScissorRect(Int32 x, Int32 y, Uint32 width, Uint32 height) = 0;
-        virtual void setScissorRect(Rect2D rect) = 0;
-        virtual void setScissorRect(std::vector<Rect2D> rects) = 0;
-
-        virtual void setLineWidth(float lineWidth) = 0;
-
-        virtual void setDepthBias(float constant, float clamp, float slopeScale) = 0;
-        virtual void setDepthBias(DepthBias depthBias) = 0;
-        
-        virtual void setBlendConstant(float r, float g, float b, float a) = 0;
-        virtual void setBlendConstant(Color blendConstant) = 0;
-
-        virtual void setDepthBounds(float min, float max) = 0;
-
-        virtual void setStencilCompareMask(Uint32 compareMask) = 0;
-
-        virtual void setStencilWriteMask(Uint32 writeMask) = 0;
-
-        virtual void setStencilReference(Uint32 reference) = 0;
-
-        // virtual void beginOcclusionQuery(Uint32 queryIndex) = 0;
-        // virtual void endOcclusionQuery() = 0;
-
-        virtual void end() = 0;
     };
 
     // ===========================================================================================================================
@@ -1187,69 +875,7 @@ namespace RHI {
     // Device
     // ===========================================================================================================================
 
-    struct DeviceInfo {
-        String vendor;
-        String architecture;
-        String device;
-    };
-
-    struct SupportedFeatures {
-        bool depthClipControl;
-        bool depth32floatStencil8float;
-        bool textureCompressionBc;
-        bool textureCompressionBcSliced3d;
-        bool textureCompressionEtc2;
-        bool textureCompressionAstc;
-        bool textureCompressionAstcSliced3d;
-        bool timestampQuery;
-        bool indirectFirstInstance;
-        bool shaderFloat16;
-        bool rg11b10ufloatRender;
-        bool bgra8unormStorage;
-        bool float32Filterable;
-        bool float32Blendable;
-        bool clipDistance;
-        bool dualSourceBlending;
-    };
-
-    struct SupportedLimits {
-        unsigned long maxTextureDimension1D;
-        unsigned long maxTextureDimension2D;
-        unsigned long maxTextureDimension3D;
-        unsigned long maxTextureArrayLayers;
-        unsigned long maxBindGroups;
-        unsigned long maxBindGroupsPlusVertexBuffers;
-        unsigned long maxBindingsPerBindGroup;
-        unsigned long maxDynamicUniformBuffersPerPipelineLayout;
-        unsigned long maxDynamicStorageBuffersPerPipelineLayout;
-        unsigned long maxSampledTexturesPerShaderStage;
-        unsigned long maxSamplersPerShaderStage;
-        unsigned long maxStorageBuffersPerShaderStage;
-        unsigned long maxStorageTexturesPerShaderStage;
-        unsigned long maxUniformBuffersPerShaderStage;
-        unsigned long long maxUniformBufferBindingSize;
-        unsigned long long maxStorageBufferBindingSize;
-        unsigned long minUniformBufferOffsetAlignment;
-        unsigned long minStorageBufferOffsetAlignment;
-        unsigned long maxVertexBuffers;
-        unsigned long long maxBufferSize;
-        unsigned long maxVertexAttributes;
-        unsigned long maxVertexBufferArrayStride;
-        unsigned long maxInterStageShaderVariables;
-        unsigned long maxColorAttachments;
-        unsigned long maxColorAttachmentBytesPerSample;
-        unsigned long maxComputeWorkgroupStorageSize;
-        unsigned long maxComputeInvocationsPerWorkgroup;
-        unsigned long maxComputeWorkgroupSizeX;
-        unsigned long maxComputeWorkgroupSizeY;
-        unsigned long maxComputeWorkgroupSizeZ;
-        unsigned long maxComputeWorkgroupsPerDimension;
-    };
-
     struct DeviceDescriptor {
-        SupportedFeatures requiredFeatures;
-        SupportedLimits requiredLimits;
-        DeviceInfo info;
         bool enableDebug;
     };
 
@@ -1260,27 +886,12 @@ namespace RHI {
 		virtual std::shared_ptr<Buffer> createBuffer(BufferDescriptor desc) = 0;
 		virtual std::shared_ptr<Texture> createTexture(TextureDescriptor desc) = 0;
 		virtual std::shared_ptr<Sampler> createSampler(SamplerDescriptor desc) = 0;
-		virtual std::shared_ptr<BindGroupLayout> createBindGroupLayout(BindGroupLayoutDescriptor desc) = 0;
-        virtual std::shared_ptr<BindGroup> createBindGroup(BindGroupDescriptor desc) = 0;
-		virtual std::shared_ptr<PipelineLayout> createPipelineLayout(PipelineLayoutDescriptor desc) = 0;
-		virtual std::shared_ptr<ShaderModule> createShaderModule(ShaderModuleDescriptor desc) = 0;
-		virtual std::shared_ptr<ComputePipeline> createComputePipeline(ComputePipelineDescriptor desc) = 0;
-		virtual std::shared_ptr<RenderPipeline> createRenderPipeline(RenderPipelineDescriptor desc) = 0;
-
-		virtual std::shared_ptr<CommandEncoder> beginCommandEncoder(CommandEncoderDescriptor desc) = 0;
+        virtual std::shared_ptr<RenderGraph> createRenderGraph(RenderGraphDescriptor desc) = 0;
 
 		// QuerySet createQuerySet(QuerySetDescriptor desc);
 
     protected:
         DeviceDescriptor desc;
-    };
-
-    // ===========================================================================================================================
-    // Adapter
-    // ===========================================================================================================================
-
-    class Adapter {
-        virtual std::shared_ptr<Device> requestDevice() = 0;
     };
 };
 
