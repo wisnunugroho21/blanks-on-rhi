@@ -10,7 +10,7 @@ namespace RHI {
     // Class Definition
     // ===========================================================================================================================
 
-    class Buffer;
+    /* class Buffer;
     class Texture;
     class TextureView;
     class Sampler;
@@ -26,7 +26,7 @@ namespace RHI {
     struct RenderPassDescriptor;
     struct ComputePassDescriptor;
 
-    enum class QueueType : uint8_t;
+    enum class QueueType : uint8_t; */
 
     // ===========================================================================================================================
     // Basic Type
@@ -130,6 +130,12 @@ namespace RHI {
     enum class BufferMapState : Uint8 {
         eUnmapped,
         eMapped
+    };
+
+    struct BufferInfo {
+        Buffer* buffer;
+        uint64_t size = ULLONG_MAX;
+        uint64_t offset = 0;
     };
     
     struct BufferDescriptor {

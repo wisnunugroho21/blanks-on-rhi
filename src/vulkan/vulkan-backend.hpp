@@ -232,11 +232,9 @@ namespace RHI {
     public:
         VulkanRenderGraph(
             RenderGraphDescriptor desc,
-            VulkanDevice* device,
             std::vector<VulkanRenderPassNode> renderPassNodes
         )
         : desc{desc},
-          device{device},
           renderPassNodes{renderPassNodes}
         {
 
