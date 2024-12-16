@@ -42,7 +42,14 @@ namespace RHI {
         std::shared_ptr<Buffer> createBuffer(BufferDescriptor descriptor) override;
         std::shared_ptr<Texture> createTexture(TextureDescriptor descriptor) override;
         std::shared_ptr<Sampler> createSampler(SamplerDescriptor desc) override;
-        std::shared_ptr<RenderGraph> createRenderGraph(RenderGraphDescriptor desc) override;
+        std::shared_ptr<BindGroupLayout> createBindGroupLayout(BindGroupLayoutDescriptor desc) override;
+        std::shared_ptr<BindGroup> createBindGroup(BindGroupDescriptor desc) override;
+        std::shared_ptr<PipelineLayout> createPipelineLayout(PipelineLayoutDescriptor desc) override;
+        std::shared_ptr<ShaderModule> createShaderModule(ShaderModuleDescriptor desc) override;
+        std::shared_ptr<ComputePipeline> createComputePipeline(ComputePipelineDescriptor desc) override;
+        std::shared_ptr<RenderPipeline> createRenderPipeline(RenderPipelineDescriptor desc) override;
+        
+        std::shared_ptr<CommandEncoder> beginCommandEncoder(CommandEncoderDescriptor desc) override;
         
     private:
         VkInstance instance;
@@ -213,39 +220,86 @@ namespace RHI {
         VkSampler sampler;
     };
 
-    struct VulkanBindGroupLayoutNode {
-        VkDescriptorSetLayout bindGroupLayout;
-    };
-
-    struct VulkanPipelineNode {
-        VkPipelineLayout pipelineLayout;
-        VkPipeline pipeline;
-        std::vector<VulkanBindGroupLayoutNode> bindGroupNodes;
-    };
-
-    struct VulkanRenderPassNode {
-        VkRenderPass renderPass;
-        std::vector<VulkanPipelineNode> pipelineNodes;
-    };
-
-    class VulkanRenderGraph : public RenderGraph {
+    class VulkanBindGroupLayout : public BindGroupLayout {
     public:
-        VulkanRenderGraph(
-            RenderGraphDescriptor desc,
-            std::vector<VulkanRenderPassNode> renderPassNodes
+        VulkanBindGroupLayout(
+            BindGroupLayoutDescriptor desc,
+            VulkanDevice* d,
+            VkDescriptorSetLayout dsl
         )
         : desc{desc},
-          renderPassNodes{renderPassNodes}
+          device{d},
+          descSetLayout{dsl}
         {
 
         }
 
+        ~VulkanBindGroupLayout();
+
+        BindGroupLayoutDescriptor getDesc() override { return this->desc; }
+
+        VkDescriptorSetLayout getNative() { return this->descSetLayout; }
+
     protected:
-        RenderGraphDescriptor desc;
+        BindGroupLayoutDescriptor desc;
+    
+    private:
+        VulkanDevice* device;
+        VkDescriptorSetLayout descSetLayout;
+    };
+
+    class VulkanBindGroup : public BindGroup {
+    public:
+        VulkanBindGroup(
+            BindGroupDescriptor desc,
+            VulkanDevice* d,
+            VkDescriptorSet ds
+        )
+        : desc{desc},
+          device{d},
+          descSet{ds}
+        {
+
+        }
+
+        BindGroupDescriptor getDesc() override { return this->desc; }
+
+        VkDescriptorSet getNative() { return this->descSet; }
+
+    protected:
+        BindGroupDescriptor desc;
 
     private:
         VulkanDevice* device;
-        std::vector<VulkanRenderPassNode> renderPassNodes;
+        VkDescriptorSet descSet;
+    };
+
+    class VulkanPipelineLayout : public PipelineLayout {
+    public:
+        VulkanPipelineLayout(
+            PipelineLayoutDescriptor desc,
+            VulkanDevice* d,
+            VkPipelineLayout pl
+        )
+        : desc{desc},
+          device{d},
+          pipelineLayout{pl}
+        {
+
+        }
+
+        ~VulkanPipelineLayout();
+
+        PipelineLayoutDescriptor getDesc() override { return this->desc; }
+
+        VkPipelineLayout getNative() { return this->pipelineLayout; }
+
+    protected: 
+        PipelineLayoutDescriptor desc;
+
+    private:
+        VulkanDevice* device;
+        VkPipelineLayout pipelineLayout;
     };
 
     class VulkanShaderModule : public ShaderModule {
@@ -275,6 +329,298 @@ namespace RHI {
         VulkanDevice* device;
         VkShaderModule shaderModule;
     };
+
+    class VulkanComputePipeline : public ComputePipeline {
+    public:
+        VulkanComputePipeline(
+            ComputePipelineDescriptor desc,
+            VulkanDevice* d,
+            VkPipeline p
+        )
+        : desc{desc},
+          device{d},
+          pipeline{p}
+        {
+
+        }
+
+        ~VulkanComputePipeline();
+
+        ComputePipelineDescriptor getDesc() override { return this->desc; }
+
+        BindGroupLayout* getBindGroupLayout(Uint32 index) override;
+
+        VkPipeline getNative() { return this->pipeline; }
+
+    protected:
+        ComputePipelineDescriptor desc;
+
+    private:
+        VulkanDevice* device;
+        VkPipeline pipeline;
+    };
+
+    class VulkanRenderPipeline : public RenderPipeline {
+    public:
+        VulkanRenderPipeline(
+            RenderPipelineDescriptor desc,
+            VulkanDevice* d,
+            VkPipeline p
+        )
+        : desc{desc},
+          device{d},
+          pipeline{p}
+        {
+
+        }
+
+        ~VulkanRenderPipeline();
+
+        RenderPipelineDescriptor getDesc() override { return this->desc; }
+
+        BindGroupLayout* getBindGroupLayout(Uint32 index) override;
+
+        VkPipeline getNative() { return this->pipeline; }
+
+    protected:
+        RenderPipelineDescriptor desc;
+
+    private:
+        VulkanDevice* device;
+        VkPipeline pipeline;
+    };
+    
+    class VulkanCommandEncoder : public CommandEncoder {
+    public:
+        VulkanCommandEncoder(
+            CommandEncoderDescriptor desc,
+            VulkanDevice* d,
+            VkCommandBuffer c
+        )
+        : 
+          desc{desc},
+          device{d},
+          commandBuffer{c}
+        {
+
+        }
+
+        ~VulkanCommandEncoder();
+
+        CommandEncoderDescriptor getDesc() override { return this->desc; }
+
+        CommandState getCommandState() override { return this->currentCommandState; }
+
+        std::shared_ptr<RenderPassEncoder> beginRenderPass(RenderPassDescriptor desc) override;
+        std::shared_ptr<ComputePassEncoder> beginComputePass(ComputePassDescriptor desc) override;
+
+        void activatePipelineBarrier(
+            PipelineStageFlags srcStage,
+            PipelineStageFlags dstStage
+        )  override;
+
+        void activateBufferBarrier(
+            PipelineStageFlags srcStage,
+            PipelineStageFlags dstStage,
+            BufferBarrier desc
+        )  override;
+
+        void activateTextureBarrier(
+            PipelineStageFlags srcStage,
+            PipelineStageFlags dstStage,
+            TextureBarrier desc
+        )  override;
+
+        void copyBufferToBuffer(
+            Buffer* source,
+            Uint64 sourceOffset,
+            Buffer* destination,
+            Uint64 destinationOffset,
+            Uint64 size) override;
+
+        void copyBufferToTexture(
+            CopyBuffer source,
+            CopyTexture destination,
+            Extent3D copySize) override;
+
+        void copyTextureToBuffer(
+            CopyTexture source,
+            CopyBuffer destination,
+            Extent3D copySize) override;
+
+        void copyTextureToTexture(
+            CopyTexture source,
+            CopyTexture destination,
+            Extent3D copySize) override;
+
+        void fillBuffer(
+            Uint32 data,
+            Buffer* buffer,
+            Uint64 size = ULLONG_MAX,
+            Uint64 offset = 0
+        ) override;
+
+        void resolveQuerySet(
+            QuerySet querySet,
+            Uint32 firstQuery,
+            Uint32 queryCount,
+            Buffer* destination,
+            Uint64 destinationOffset) override;
+
+        void finish() override;
+
+        VkCommandBuffer getNative() { return this->commandBuffer; }
+
+    protected:
+        CommandEncoderDescriptor desc;
+
+    private:
+        VulkanDevice* device;
+        VkCommandBuffer commandBuffer;
+        CommandState currentCommandState;
+    };
+
+    class VulkanComputePassEncoder : public ComputePassEncoder {
+    public:
+        VulkanComputePassEncoder(
+            ComputePassDescriptor desc,
+            CommandEncoder* c
+        )
+        : desc{desc},
+          commandEncoder{c}
+        {
+
+        } 
+
+        ComputePassDescriptor getDesc() override { return this->desc; }
+
+        CommandEncoder* getCommandEncoder() override { return this->commandEncoder; }
+
+        ComputeState getComputeState() override { return this->currentComputeState; }
+
+        CommandState getCommandState() override { return this->currentCommandState; }
+
+        void setPipeline(ComputePipeline* pipeline) override;
+
+        void setBindGroup(BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets = {}) override;
+        void setBindGroup(std::vector<BindGroup*>  bindGroup, std::vector<Uint32> dynamicOffsets = {}) override;
+
+        void dispatchWorkgroups(Uint32 workgroupCountX, Uint32 workgroupCountY = 1, Uint32 workgroupCountZ = 1) override;
+        void dispatchWorkgroupsIndirect(Buffer* indirectBuffer, Uint64 indirectOffset) override;
+
+        void end() override;
+
+    protected:
+        ComputePassDescriptor desc;
+        CommandEncoder* commandEncoder;
+
+        ComputeState currentComputeState;
+        CommandState currentCommandState;
+    };
+
+    class VulkanRenderPassEncoder : public RenderPassEncoder {
+    public:
+        VulkanRenderPassEncoder(
+            RenderPassDescriptor desc,
+            CommandEncoder* c
+        )
+        : desc{desc},
+          commandEncoder{c}
+        {
+
+        }
+
+        RenderPassDescriptor getDesc() override { return this->desc; }
+
+        CommandEncoder* getCommandEncoder() override { return this->commandEncoder; }
+
+        RenderState getRenderState() override { return this->currentRenderState; }
+
+        CommandState getCommandState() override { return this->currentCommandState; }
+
+        void setViewport(float x, float y, float width, float height, float minDepth, float maxDepth) override;
+        void setViewport(Viewport viewport) override;
+        void setViewport(std::vector<Viewport> viewports) override;
+
+        void setScissorRect(Int32 x, Int32 y, Uint32 width, Uint32 height) override;
+        void setScissorRect(Rect2D scissor) override;
+        void setScissorRect(std::vector<Rect2D> scissors) override;
+
+        void setLineWidth(float lineWidth) override;
+
+        void setDepthBias(float constant, float clamp, float slopeScale) override;
+        void setDepthBias(DepthBias depthBias) override;
+        
+        void setBlendConstant(float r, float g, float b, float a) override;
+        void setBlendConstant(Color color) override;
+
+        void setDepthBounds(float min, float max) override;
+
+        void setStencilCompareMask(Uint32 compareMask) override;
+
+        void setStencilWriteMask(Uint32 writeMask) override;
+
+        void setStencilReference(Uint32 reference) override;
+
+        void setPipeline(RenderPipeline* pipeline) override;
+
+        void setBindGroup(BindGroup* bindGroup, std::vector<Uint32> dynamicOffsets = {}) override;
+        void setBindGroup(std::vector<BindGroup*>  bindGroup, std::vector<Uint32> dynamicOffsets = {}) override;
+
+        void setIndexBuffer(Buffer* buffer, Uint64 offset = 0) override;
+
+        void setVertexBuffer(Buffer* buffer, Uint64 offsets = 0) override;
+        void setVertexBuffer(std::vector<Buffer*> buffers, std::vector<Uint64> offsets = {}) override;
+
+        void draw(Uint32 vertexCount, Uint32 instanceCount = 1,  Uint32 firstVertex = 0, Uint32 firstInstance = 0) override;
+        void drawIndexed(Uint32 indexCount, Uint32 instanceCount = 1, Uint32 firstIndex = 0, Int32 baseVertex = 0, 
+            Uint32 firstInstance = 0) override;
+
+        void drawIndirect(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Uint64 drawCount = 1) override;
+        void drawIndirectCount(Buffer* indirectBuffer, Buffer* countBuffer, Uint64 indirectOffset = 0, Uint64 countOffset = 0) override;
+
+        void drawIndexedIndirect(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Uint64 drawCount = 1) override;
+        void drawIndexedIndirectCount(Buffer* indirectBuffer, Buffer* countBuffer, Uint64 indirectOffset = 0, Uint64 countOffset = 0) override;
+
+        void end() override;
+
+    protected:
+        RenderPassDescriptor desc;
+        CommandEncoder* commandEncoder;
+
+        RenderState currentRenderState;
+        CommandState currentCommandState;
+    };
+
+    class VulkanQueue : public Queue {
+    public:
+        VulkanQueue(
+            QueueDescriptor desc,
+            VkQueue q,
+            Uint32 fi
+        )
+        : desc{desc},
+          queue{q},
+          familyIndex{fi}
+        {
+
+        }
+
+        QueueDescriptor getDesc() override { return this->desc; }
+
+        void submit(std::vector<CommandEncoder*> commandBuffers) override;
+
+        VkQueue getNative() { return this->queue; }
+
+        Uint32 getFamilyIndex() { return this->familyIndex; }
+
+    protected:
+        QueueDescriptor desc;
+
+    private:
+        VkQueue queue;
+        Uint32 familyIndex;
+    };    
 
     class VulkanFactory {
         static std::shared_ptr<Device> createDevice(DeviceDescriptor desc);
