@@ -16,8 +16,8 @@ namespace RHI {
                 RenderPassColorAttachment colorAttachment = renderPassDesc.colorAttachments[j];
 
                 attachmentsDescs.emplace_back(VkAttachmentDescription{
-                    .format = convertTextureFormatIntoVulkan(colorAttachment.targetView->getDesc().format),
-                    .samples = convertSampleCountIntoVulkan(colorAttachment.targetView->getTexture()->getDesc().sampleCount),
+                    .format = convertTextureFormatIntoVulkan(colorAttachment.format),
+                    .samples = convertSampleCountIntoVulkan(colorAttachment.sampleCount),
                     .loadOp = convertLoadOpIntoVulkan(colorAttachment.loadOp),
                     .storeOp = convertStoreOpIntoVulkan(colorAttachment.storeOp),
                     .initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -29,9 +29,9 @@ namespace RHI {
                     .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
                 });
 
-                if (colorAttachment.resolveTargetView != nullptr) {
+                if (colorAttachment.sampleCount > 1u) {
                     attachmentsDescs.emplace_back(VkAttachmentDescription{
-                        .format = convertTextureFormatIntoVulkan(colorAttachment.resolveTargetView->getDesc().format),
+                        .format = convertTextureFormatIntoVulkan(colorAttachment.format),
                         .samples = VK_SAMPLE_COUNT_1_BIT,
                         .loadOp = convertLoadOpIntoVulkan(colorAttachment.loadOp),
                         .storeOp = convertStoreOpIntoVulkan(colorAttachment.storeOp),
@@ -58,10 +58,10 @@ namespace RHI {
                 .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
             };
 
-            if (renderPassDesc.depthStencilAttachment.targetView != nullptr) {
+            if (renderPassDesc.depthStencilAttachment.format != TextureFormat::eUndefined) {
                 attachmentsDescs.emplace_back(VkAttachmentDescription{
-                    .format = convertTextureFormatIntoVulkan(renderPassDesc.depthStencilAttachment.targetView->getDesc().format),
-                    .samples = convertSampleCountIntoVulkan(renderPassDesc.depthStencilAttachment.targetView->getTexture()->getDesc().sampleCount),
+                    .format = convertTextureFormatIntoVulkan(renderPassDesc.depthStencilAttachment.format),
+                    .samples = convertSampleCountIntoVulkan(renderPassDesc.depthStencilAttachment.sampleCount),
                     .loadOp = convertLoadOpIntoVulkan(renderPassDesc.depthStencilAttachment.depthLoadOp),
                     .storeOp = convertStoreOpIntoVulkan(renderPassDesc.depthStencilAttachment.depthStoreOp),
                     .stencilLoadOp = convertLoadOpIntoVulkan(renderPassDesc.depthStencilAttachment.stencilLoadOp),

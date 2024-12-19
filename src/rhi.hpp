@@ -160,6 +160,8 @@ namespace RHI {
     // ===========================================================================================================================
 
     enum TextureFormat : Uint8 {
+        eUndefined = 0u,
+
         // 8-bit formats
         eR8Unorm,
         eR8Snorm,
@@ -722,29 +724,25 @@ namespace RHI {
     };
 
     struct RenderPassColorAttachment {
-        TextureView* targetView;
-        TextureView* resolveTargetView;
-        ResolveMode resolveMode;
+        TextureFormat format = TextureFormat::eUndefined;
+        Uint32 sampleCount = 1;
 
-        Color clearValue;
-        LoadOp loadOp;
-        StoreOp storeOp;
+        Color clearValue = Color(0.0f);
+        LoadOp loadOp = LoadOp::eClear;
+        StoreOp storeOp = StoreOp::eStore;
     };
 
     struct RenderPassDepthStencilAttachment {
-        TextureView* targetView;
+        TextureFormat format = TextureFormat::eUndefined;
+        Uint32 sampleCount = 1;
 
-        float depthClearValue;
-        LoadOp depthLoadOp;
-        StoreOp depthStoreOp;
+        float depthClearValue = 1.0f;
+        LoadOp depthLoadOp = LoadOp::eClear;
+        StoreOp depthStoreOp = StoreOp::eDiscard;
 
-        bool depthReadOnly = false;
-
-        Uint32 stencilClearValue;
-        LoadOp stencilLoadOp;
-        StoreOp stencilStoreOp;
-
-        bool stencilReadOnly = false;
+        Uint32 stencilClearValue = 0u;
+        LoadOp stencilLoadOp = LoadOp::eClear;
+        StoreOp stencilStoreOp = StoreOp::eDiscard;
     };
 
     struct RenderPassDescriptor : BaseDescriptor {
