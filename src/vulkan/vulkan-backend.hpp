@@ -65,7 +65,17 @@ namespace RHI {
         VkDescriptorPool descriptorPool;
     };
 
-    class VulkanBuffer : public Buffer {
+    class VulkanResource {
+    public:
+        VulkanResource(VmaAllocation ma) : memoryAllocation{ma} {}
+
+        VmaAllocation getMemoryAllocation() { return this->memoryAllocation; }
+
+    protected:
+        VmaAllocation memoryAllocation;
+    };
+
+    class VulkanBuffer : public Buffer, public VulkanResource {
     public:
         VulkanBuffer(
             BufferDescriptor desc,
@@ -76,7 +86,7 @@ namespace RHI {
         : desc{desc},
           device{d}, 
           buffer{b},
-          memoryAllocation{ma}
+          VulkanResource(ma)
         {
             this->mapState = BufferMapState::eUnmapped;
         }
@@ -98,7 +108,6 @@ namespace RHI {
         void invalidate(Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
 
         VkBuffer getNative() { return this->buffer; }
-        VmaAllocation getMemoryAllocation() { return this->memoryAllocation; }
 
     protected:
         BufferDescriptor desc;
@@ -108,12 +117,10 @@ namespace RHI {
 
     private:
         VulkanDevice* device;
-
         VkBuffer buffer;
-        VmaAllocation memoryAllocation;
     };
 
-    class VulkanTexture : public Texture {
+    class VulkanTexture : public Texture, public VulkanResource {
     public:
         VulkanTexture(
             TextureDescriptor desc,
@@ -124,7 +131,7 @@ namespace RHI {
         : desc{desc},
           device{d},
           image{i},
-          memoryAllocation{ma}
+          VulkanResource(ma)
         {
 
         }
@@ -138,7 +145,6 @@ namespace RHI {
         void setState(TextureState state) { this->state = state; }
 
         VkImage getNative() { return this->image; }
-        VmaAllocation getMemoryAllocation() { return this->memoryAllocation; }
 
     protected:
         TextureDescriptor desc;
@@ -146,9 +152,7 @@ namespace RHI {
 
     private:
         VulkanDevice* device;
-
         VkImage image;
-        VmaAllocation memoryAllocation;
     };
 
     class VulkanTextureView : public TextureView {

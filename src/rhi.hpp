@@ -101,7 +101,15 @@ namespace RHI {
     struct Extent3D {
         Uint32 width;
         Uint32 height = 1;
-        Uint32 depth = 1;
+        Uint32 depthOrArrayLayers = 1;
+
+        bool operator == (const Extent3D& other) const { 
+            return this->width == other.width &&
+                   this->height == other.height &&
+                   this->depthOrArrayLayers == other.depthOrArrayLayers;
+        }
+
+		bool operator !=(const Extent3D& other) const { return !(*this == other); }
     };
 
     struct Rect2D {
@@ -109,6 +117,15 @@ namespace RHI {
         Int32 y;
         Uint32 width;
         Uint32 height;
+
+        bool operator == (const Rect2D& other) const { 
+            return this->x == other.x &&
+                   this->y == other.y &&
+                   this->width == other.width &&
+                   this->height == other.height;
+        }
+
+		bool operator !=(const Rect2D& other) const { return !(*this == other); }
     };
 
     // ===========================================================================================================================
@@ -275,12 +292,10 @@ namespace RHI {
         TextureFormat format;
         TextureUsageFlags usage;
 
-        Uint32 sliceLayersNum = 1;
         Uint32 mipLevelCount = 1;
         Uint32 sampleCount = 1;
 
         TextureDimension dimension = TextureDimension::e2D;
-        TextureState initialState = TextureState::eUndefined;
     };
 
     struct TextureSubresource {
