@@ -216,7 +216,6 @@ namespace RHI {
             .renderPass = VK_NULL_HANDLE,
             .subpass = 0
         };
-        
 
         VkPipeline pipeline;
         if (vkCreateGraphicsPipelines(this->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {

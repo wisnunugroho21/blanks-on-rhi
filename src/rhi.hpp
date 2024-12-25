@@ -1174,7 +1174,8 @@ namespace RHI {
     };
 
     class QueueAsync {
-
+        virtual uint32_t getCommandId() = 0;
+        
     };
 
     class Queue {
