@@ -242,6 +242,8 @@ namespace RHI {
 
         }
 
+        std::vector<VulkanRenderPassNode> getNative() { return this->renderPassNodes; }
+
     protected:
         RenderGraphDescriptor desc;
 

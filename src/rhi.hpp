@@ -419,6 +419,7 @@ namespace RHI {
         ShaderStageFlags shaderStage;
         BindingType type;
 
+        ResourceAccess access = ResourceAccess::eReadOnly;
         Uint32 bindCount = 1;
     };
 
@@ -781,6 +782,54 @@ namespace RHI {
     };
 
     // ===========================================================================================================================
+    // Render Graph Command Encoder
+    // ===========================================================================================================================
+    
+    class BindCommandEncoder {
+        virtual void bindBuffer(Uint32 binding, Buffer* buffer, Uint64 size = ULLONG_MAX, Uint64 offset = 0u) = 0; 
+
+        virtual void bindTexture(Uint32 binding, TextureView* textureView) = 0;
+
+        virtual void bindSampler(Uint32 binding, Sampler* sampler) = 0;
+    };
+    
+    class DrawCommandEncoder {
+        virtual void draw(Uint32 vertexCount, Uint32 instanceCount = 1,  Uint32 firstVertex = 0, Uint32 firstInstance = 0) = 0;
+        virtual void drawIndexed(Uint32 indexCount, Uint32 instanceCount = 1, Uint32 firstIndex = 0, Int32 baseVertex = 0, 
+            Uint32 firstInstance = 0) = 0;
+
+        virtual void drawIndirect(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Uint64 drawCount = 1) = 0;
+        virtual void drawIndirectCount(Buffer* indirectBuffer, Buffer* countBuffer, Uint64 indirectOffset = 0, Uint64 countOffset = 0) = 0;
+
+        virtual void drawIndexedIndirect(Buffer* indirectBuffer, Uint64 indirectOffset = 0, Uint64 drawCount = 1) = 0;
+        virtual void drawIndexedIndirectCount(Buffer* indirectBuffer, Buffer* countBuffer, Uint64 indirectOffset = 0, Uint64 countOffset = 0) = 0;
+    };
+
+    class PipelineCommandEncoder : DrawCommandEncoder, BindCommandEncoder {
+        virtual void end() = 0;
+    };
+
+    class RenderPassCommandEncoder {
+        virtual PipelineCommandEncoder startPipeline(Uint32 pipelineIndex, Buffer* buffer, Uint64 offsets = 0) = 0;
+        virtual PipelineCommandEncoder startPipeline(Uint32 pipelineIndex, std::vector<Buffer*> buffers, std::vector<Uint64> offsets = {}) = 0;
+
+        virtual PipelineCommandEncoder startPipeline(Uint32 pipelineIndex, Buffer* vertexBuffer, Buffer* indexBuffer, 
+            Uint64 vertexOffsets = 0,  Uint64 indexOffset = 0) = 0;
+
+        virtual PipelineCommandEncoder startPipeline(Uint32 pipelineIndex, std::vector<Buffer*> vertexBuffers, Buffer* indexBuffer, 
+            std::vector<Uint64> vertexOffsets = {},  Uint64 indexOffset = 0) = 0;
+
+        virtual void end() = 0;
+    };
+
+    class RenderGraphCommandEncoder {
+        virtual RenderPassCommandEncoder beginRenderPass(Uint32 renderPassIndex, std::vector<TextureView*> colorTextureViews, 
+            TextureView* depthStencilTextureViews, Extent3D size) = 0;
+
+        virtual void finish() = 0;
+    };
+
+    // ===========================================================================================================================
     // Command Encoder
     // ===========================================================================================================================
 
@@ -815,6 +864,8 @@ namespace RHI {
     class CommandEncoder : public CommandsMixin {
     public:
         virtual CommandEncoderDescriptor getDesc() = 0;
+
+        virtual RenderGraphCommandEncoder startRenderGraph(RenderGraph* renderGraph) = 0;
 
         virtual void copyBufferToBuffer(
             Buffer* source,
