@@ -17,7 +17,7 @@ namespace RHI {
 
                 attachmentsDescs.emplace_back(VkAttachmentDescription{
                     .format = convertTextureFormatIntoVulkan(colorAttachment.format),
-                    .samples = convertSampleCountIntoVulkan(colorAttachment.sampleCount),
+                    .samples = convertSampleCountIntoVulkan(renderPassDesc.sampleCount),
                     .loadOp = convertLoadOpIntoVulkan(colorAttachment.loadOp),
                     .storeOp = convertStoreOpIntoVulkan(colorAttachment.storeOp),
                     .initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -29,7 +29,7 @@ namespace RHI {
                     .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
                 });
 
-                if (colorAttachment.sampleCount > 1u) {
+                if (renderPassDesc.sampleCount > 1u) {
                     attachmentsDescs.emplace_back(VkAttachmentDescription{
                         .format = convertTextureFormatIntoVulkan(colorAttachment.format),
                         .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -61,7 +61,7 @@ namespace RHI {
             if (renderPassDesc.depthStencilAttachment.format != TextureFormat::eUndefined) {
                 attachmentsDescs.emplace_back(VkAttachmentDescription{
                     .format = convertTextureFormatIntoVulkan(renderPassDesc.depthStencilAttachment.format),
-                    .samples = convertSampleCountIntoVulkan(renderPassDesc.depthStencilAttachment.sampleCount),
+                    .samples = convertSampleCountIntoVulkan(renderPassDesc.sampleCount),
                     .loadOp = convertLoadOpIntoVulkan(renderPassDesc.depthStencilAttachment.depthLoadOp),
                     .storeOp = convertStoreOpIntoVulkan(renderPassDesc.depthStencilAttachment.depthStoreOp),
                     .stencilLoadOp = convertLoadOpIntoVulkan(renderPassDesc.depthStencilAttachment.stencilLoadOp),
@@ -155,8 +155,8 @@ namespace RHI {
                     }
                 };
 
-                std::vector<VkVertexInputBindingDescription> vertexBindingInfoes{};
-                std::vector<VkVertexInputAttributeDescription> vertexAttributeInfoes{};
+                std::vector<VkVertexInputBindingDescription> vertexBindingInfos{};
+                std::vector<VkVertexInputAttributeDescription> vertexAttributeInfos{};
 
                 for (uint32_t i = 0; i < renderPipelineDesc.vertex.buffers.size(); i++) {
                     VertexBufferLayout vertexBufferLayout = renderPipelineDesc.vertex.buffers[i];
@@ -167,7 +167,7 @@ namespace RHI {
                         .inputRate = convertVertexStepModeIntoVulkan(vertexBufferLayout.stepMode)
                     };
 
-                    vertexBindingInfoes.emplace_back(vertexBindingInfo);
+                    vertexBindingInfos.emplace_back(vertexBindingInfo);
                     
                     for (uint32_t j = 0; j < vertexBufferLayout.attributes.size(); j++) {
                         VertexAttribute vertexAttribute = vertexBufferLayout.attributes[j];
@@ -179,16 +179,16 @@ namespace RHI {
                             .offset = vertexAttribute.offset
                         };
 
-                        vertexAttributeInfoes.emplace_back(vertexAttributeInfo);
+                        vertexAttributeInfos.emplace_back(vertexAttributeInfo);
                     }
                 }
 
                 VkPipelineVertexInputStateCreateInfo vertexInputInfo{
                     .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-                    .vertexBindingDescriptionCount = static_cast<uint32_t>(vertexBindingInfoes.size()),
-                    .pVertexBindingDescriptions = vertexBindingInfoes.data(),
-                    .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributeInfoes.size()),
-                    .pVertexAttributeDescriptions = vertexAttributeInfoes.data()
+                    .vertexBindingDescriptionCount = static_cast<uint32_t>(vertexBindingInfos.size()),
+                    .pVertexBindingDescriptions = vertexBindingInfos.data(),
+                    .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributeInfos.size()),
+                    .pVertexAttributeDescriptions = vertexAttributeInfos.data()
                 };
 
                 VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{
@@ -230,7 +230,7 @@ namespace RHI {
                     .depthBiasClamp = renderPipelineDesc.rasterizationState.depthBias.clamp,
                     .depthBiasSlopeFactor = renderPipelineDesc.rasterizationState.depthBias.slopeScale,
 
-                    .lineWidth = renderPipelineDesc.rasterizationState.lineWidth
+                    .lineWidth = 1.0f
                 };
 
                 VkSampleMask sampleMask = renderPipelineDesc.multisample.mask;

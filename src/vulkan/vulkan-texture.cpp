@@ -9,10 +9,10 @@ namespace RHI {
             .imageType = convertDimensionIntoVulkan(desc.dimension),
             .format = convertTextureFormatIntoVulkan(desc.format),
             .extent.width = desc.size.width,
-            .extent.height = desc.size.height,
-            .extent.depth = desc.size.depth,
+            .extent.height = desc.dimension == TextureDimension::e1D ? 1.0f : desc.size.height,
+            .extent.depth = desc.dimension == TextureDimension::e3D ? desc.size.depthOrArrayLayers : 1.0f,
             .mipLevels = desc.mipLevelCount,
-            .arrayLayers = desc.sliceLayersNum,
+            .arrayLayers = desc.dimension == TextureDimension::e2D ? desc.size.depthOrArrayLayers : 1u,
             .tiling = VK_IMAGE_TILING_OPTIMAL,
             .usage = convertImageUsageIntoVulkan(desc.usage),
             .initialLayout = convertTextureStateIntoVulkan(desc.initialState)
@@ -22,7 +22,7 @@ namespace RHI {
             .usage = VMA_MEMORY_USAGE_AUTO
         };
 
-        if (desc.dimension == TextureDimension::e2D && desc.sliceLayersNum == 6) {
+        if (desc.dimension == TextureDimension::e2D && desc.size.depthOrArrayLayers == 6) {
             imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         }
 

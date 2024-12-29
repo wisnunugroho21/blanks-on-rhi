@@ -93,7 +93,15 @@ namespace RHI {
     struct Extent3D {
         Uint32 width;
         Uint32 height = 1;
-        Uint32 depth = 1;
+        Uint32 depthOrArrayLayers = 1;
+
+        bool operator == (const Extent3D& other) const { 
+            return this->width == other.width &&
+                   this->height == other.height &&
+                   this->depthOrArrayLayers == other.depthOrArrayLayers;
+        }
+
+		bool operator !=(const Extent3D& other) const { return !(*this == other); }
     };
 
     struct Rect2D {
@@ -101,6 +109,15 @@ namespace RHI {
         Int32 y;
         Uint32 width;
         Uint32 height;
+
+        bool operator == (const Rect2D& other) const { 
+            return this->x == other.x &&
+                   this->y == other.y &&
+                   this->width == other.width &&
+                   this->height == other.height;
+        }
+
+		bool operator !=(const Rect2D& other) const { return !(*this == other); }
     };
 
     struct BaseDescriptor {
@@ -267,7 +284,6 @@ namespace RHI {
         TextureFormat format;
         TextureUsageFlags usage;
 
-        Uint32 sliceLayersNum = 1;
         Uint32 mipLevelCount = 1;
         Uint32 sampleCount = 1;
 
@@ -623,7 +639,6 @@ namespace RHI {
         FrontFace frontFace = FrontFace::eCCW;
         CullMode cullMode = CullMode::eNone;
         PolygonMode polygonMode = PolygonMode::eFill;
-        float lineWidth = 1.0f;
 
         DepthBias depthBias{};
         bool unclippedDepth = false; // Requires "depth-clip-control" feature.
@@ -725,7 +740,6 @@ namespace RHI {
 
     struct RenderPassColorAttachment {
         TextureFormat format = TextureFormat::eUndefined;
-        Uint32 sampleCount = 1;
 
         Color clearValue = Color(0.0f);
         LoadOp loadOp = LoadOp::eClear;
@@ -734,7 +748,6 @@ namespace RHI {
 
     struct RenderPassDepthStencilAttachment {
         TextureFormat format = TextureFormat::eUndefined;
-        Uint32 sampleCount = 1;
 
         float depthClearValue = 1.0f;
         LoadOp depthLoadOp = LoadOp::eClear;
@@ -750,6 +763,8 @@ namespace RHI {
 
         std::vector<RenderPassColorAttachment> colorAttachments;
         RenderPassDepthStencilAttachment depthStencilAttachment;
+
+        Uint32 sampleCount = 1;
     };
 
     // ===========================================================================================================================
