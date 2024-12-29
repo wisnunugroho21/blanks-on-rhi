@@ -98,14 +98,14 @@ namespace RHI {
                 .layerCount = destination.view->getDesc().subresource.arrayLayerCount
             },
             .imageOffset = {
-                .x = destination.origin.x,
-                .y = destination.origin.y,
-                .z = destination.origin.z
+                .x = static_cast<Int32>(destination.origin.x),
+                .y = static_cast<Int32>(destination.origin.y),
+                .z = static_cast<Int32>(destination.origin.z)
             },
             .imageExtent = {
                 .width = copySize.width,
                 .height = copySize.height,
-                .depth = copySize.depth
+                .depth = copySize.depthOrArrayLayers
             }
         };
 
@@ -131,14 +131,14 @@ namespace RHI {
                 .layerCount = source.view->getDesc().subresource.arrayLayerCount
             },
             .imageOffset = {
-                .x = source.origin.x,
-                .y = source.origin.y,
-                .z = source.origin.z
+                .x = static_cast<Int32>(source.origin.x),
+                .y = static_cast<Int32>(source.origin.y),
+                .z = static_cast<Int32>(source.origin.z)
             },
             .imageExtent = {
                 .width = copySize.width,
                 .height = copySize.height,
-                .depth = copySize.depth
+                .depth = copySize.depthOrArrayLayers
             }
         };
 
@@ -179,7 +179,7 @@ namespace RHI {
             .extent = {
                 .width = copySize.width,
                 .height = copySize.height,
-                .depth = copySize.depth
+                .depth = copySize.depthOrArrayLayers
             }
         };
 

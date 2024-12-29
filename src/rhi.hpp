@@ -857,12 +857,6 @@ namespace RHI {
     // Barrier
     // ===========================================================================================================================
 
-    enum class ResourceAccess : Uint8 {
-        eWriteOnly,
-        eReadOnly,
-        eReadWrite
-    };
-
     enum class PipelineStage : FlagsConstant {
         eCompute            = 0x0001,
         eVertex             = 0x0002,
@@ -1189,14 +1183,13 @@ namespace RHI {
     };
 
     class QueueAsync {
-        virtual uint32_t getCommandId() = 0;
-        
+        virtual Uint64 getCommandId() = 0;
     };
 
     class Queue {
     public:
         virtual QueueDescriptor getDesc() = 0;
-        virtual void submit(std::vector<CommandEncoder*> commandBuffers) = 0;
+        virtual std::shared_ptr<QueueAsync> submit(std::vector<CommandEncoder*> commandBuffers, std::shared_ptr<QueueAsync> signalAsync) = 0;
     }; 
 
     // ===========================================================================================================================

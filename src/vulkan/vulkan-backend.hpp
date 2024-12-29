@@ -596,6 +596,15 @@ namespace RHI {
         CommandState currentCommandState;
     };
 
+    class VulkanQueueAsync : public QueueAsync {
+        Uint64 commandId;
+        VkSemaphore presentSemaphore;
+
+        Uint64 getCommandId() override {
+            return this->commandId;
+        }
+    };
+
     class VulkanQueue : public Queue {
     public:
         VulkanQueue(
@@ -607,12 +616,21 @@ namespace RHI {
           queue{q},
           familyIndex{fi}
         {
+            VkSemaphoreTypeCreateInfo timelineCreateInfo;
+            timelineCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
+            timelineCreateInfo.pNext = NULL;
+            timelineCreateInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+            timelineCreateInfo.initialValue = 0;
 
+            VkSemaphoreCreateInfo createInfo;
+            createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+            createInfo.pNext = &timelineCreateInfo;
+            createInfo.flags = 0;
         }
 
         QueueDescriptor getDesc() override { return this->desc; }
 
-        void submit(std::vector<CommandEncoder*> commandBuffers) override;
+        std::shared_ptr<QueueAsync> submit(std::vector<CommandEncoder*> commandBuffers, std::shared_ptr<QueueAsync> signalAsync) override;
 
         VkQueue getNative() { return this->queue; }
 
@@ -623,6 +641,8 @@ namespace RHI {
 
     private:
         VkQueue queue;
+        VkSemaphore timelineSemaphore;
+
         Uint32 familyIndex;
     };    
 

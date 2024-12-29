@@ -34,7 +34,7 @@ namespace RHI {
 
             .renderArea.offset.x = 0,
             .renderArea.offset.y = 0,
-            .layerCount = desc.colorAttachments[0].targetView->getTexture()->getDesc().sliceLayersNum,
+            .layerCount = desc.colorAttachments[0].targetView->getTexture()->getDesc().size.depthOrArrayLayers,
 
             .colorAttachmentCount = static_cast<uint32_t>(colorRenderAttachInfos.size()),
             .pColorAttachments = colorRenderAttachInfos.data(),

@@ -1,7 +1,7 @@
 #include "vulkan-backend.hpp"
 
 namespace RHI {
-    void VulkanQueue::submit(std::vector<CommandEncoder*> commandBuffers) {
+    std::shared_ptr<QueueAsync> VulkanQueue::submit(std::vector<CommandEncoder*> commandBuffers, std::shared_ptr<QueueAsync> signalAsync) {
         std::vector<VkCommandBuffer> vulkanCommandBuffers;
 
         for (auto &&commandBuffer : commandBuffers) {
