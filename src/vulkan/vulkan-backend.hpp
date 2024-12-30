@@ -7,6 +7,10 @@
 #include "../rhi.hpp"
 
 namespace RHI {
+    // ===========================================================================================================================
+    // Device
+    // ===========================================================================================================================
+
     class VulkanDevice : public Device {
     public:
         VulkanDevice(
@@ -58,6 +62,10 @@ namespace RHI {
         VkDescriptorPool descriptorPool;
     };
 
+    // ===========================================================================================================================
+    // Buffer
+    // ===========================================================================================================================
+
     class VulkanBuffer : public Buffer {
     public:
         VulkanBuffer(
@@ -105,6 +113,10 @@ namespace RHI {
         VkBuffer buffer;
         VmaAllocation memoryAllocation;
     };
+
+    // ===========================================================================================================================
+    // Texture
+    // ===========================================================================================================================
 
     class VulkanTexture : public Texture {
     public:
@@ -177,6 +189,10 @@ namespace RHI {
         VkImageView imageView;
     };
 
+    // ===========================================================================================================================
+    // Sampler
+    // ===========================================================================================================================
+
     class VulkanSampler : public Sampler {
     public:
         VulkanSampler(
@@ -213,44 +229,9 @@ namespace RHI {
         VkSampler sampler;
     };
 
-    struct VulkanBindGroupLayoutNode {
-        VkDescriptorSetLayout bindGroupLayout;
-    };
-
-    struct VulkanPipelineNode {
-        VkPipelineLayout pipelineLayout;
-        VkPipeline pipeline;
-        std::vector<VulkanBindGroupLayoutNode> bindGroupNodes;
-    };
-
-    struct VulkanRenderPassNode {
-        VkRenderPass renderPass;
-        std::vector<VulkanPipelineNode> pipelineNodes;
-    };
-
-    class VulkanRenderGraph : public RenderGraph {
-    public:
-        VulkanRenderGraph(
-            RenderGraphDescriptor desc,
-            VulkanDevice* device,
-            std::vector<VulkanRenderPassNode> renderPassNodes
-        )
-        : desc{desc},
-          device{device},
-          renderPassNodes{renderPassNodes}
-        {
-
-        }
-
-        std::vector<VulkanRenderPassNode> getNative() { return this->renderPassNodes; }
-
-    protected:
-        RenderGraphDescriptor desc;
-
-    private:
-        VulkanDevice* device;
-        std::vector<VulkanRenderPassNode> renderPassNodes;
-    };
+    // ===========================================================================================================================
+    // Shader Module
+    // ===========================================================================================================================
 
     class VulkanShaderModule : public ShaderModule {
     public:
@@ -279,6 +260,191 @@ namespace RHI {
         VulkanDevice* device;
         VkShaderModule shaderModule;
     };
+
+    // ===========================================================================================================================
+    // Bind Group
+    // ===========================================================================================================================
+
+    struct VulkanBindGroupLayoutNode {
+        VkDescriptorSetLayout bindGroupLayout;
+    };
+
+    // ===========================================================================================================================
+    // Pipeline
+    // ===========================================================================================================================
+
+    struct VulkanPipelineNode {
+        VkPipelineLayout pipelineLayout;
+        VkPipeline pipeline;
+        std::vector<VulkanBindGroupLayoutNode> bindGroupNodes;
+    };
+
+    // ===========================================================================================================================
+    // Render Pass
+    // ===========================================================================================================================
+
+    struct VulkanRenderPassNode {
+        VkRenderPass renderPass;
+        std::vector<VulkanPipelineNode> pipelineNodes;
+    };
+
+    // ===========================================================================================================================
+    // Render Graph
+    // ===========================================================================================================================
+
+    class VulkanRenderGraph : public RenderGraph {
+    public:
+        VulkanRenderGraph(
+            RenderGraphDescriptor desc,
+            VulkanDevice* device,
+            std::vector<VulkanRenderPassNode> renderPassNodes
+        )
+        : desc{desc},
+          device{device},
+          renderPassNodes{renderPassNodes}
+        {
+
+        }
+
+        std::vector<VulkanRenderPassNode> getNative() { return this->renderPassNodes; }
+
+    protected:
+        RenderGraphDescriptor desc;
+
+    private:
+        VulkanDevice* device;
+        std::vector<VulkanRenderPassNode> renderPassNodes;
+    };
+
+    // ===========================================================================================================================
+    // Command Encoder
+    // ===========================================================================================================================
+
+    enum class PipelineStage : FlagsConstant {
+        eCompute            = 0x0001,
+        eVertex             = 0x0002,
+        eFragment           = 0x0004,
+        eTessellCtrl        = 0x0008,
+        eTessellEval        = 0x0010,
+        eTask               = 0x0020,
+        eMesh               = 0x0040,
+        eTransfer           = 0x0080,
+        eAttachmentOutput   = 0x0100,
+        eEarlyFragmentTest  = 0x0200,
+        eLateFragmentTest   = 0x0400,
+    };
+
+    enum class TextureState : Uint8 {
+        eUndefined,
+        eColorAttachment,
+        eDepthStencilAttachment,
+        eColorTextureBinding,
+        eDepthStencilTextureBinding,
+        eStorageBinding,
+        eCopySrc,
+        eCopyDst,
+        ePresent
+    };
+   
+    struct BufferInfo {
+        Buffer* buffer;
+        Uint64 size;
+        Uint64 offset;
+    };
+
+    struct BufferCommandState {
+        BufferInfo info;
+        PipelineStage stage;
+        ResourceAccess access;
+    };
+
+    struct TextureCommandState {
+        TextureView* textureView;
+        TextureState state;
+        PipelineStage stage;
+        ResourceAccess access;
+    };
+    
+    class VulkanCommandBuffer : public CommandBuffer {
+    public:
+        VulkanCommandBuffer(VulkanDevice* d) : device{d} {}
+
+        VkCommandBuffer getNative() { return this->commandBuffer; }
+
+        VulkanDevice* getDevice() { return this->device; }
+
+        std::vector<VkFramebuffer> getFrameBuffers() {
+            return this->frameBuffers;
+        }
+
+        std::vector<VkDescriptorSet> getDescSets() {
+            return this->descSets;
+        }
+
+    private:
+        VulkanDevice* device;
+
+        VkCommandBuffer commandBuffer;
+        std::vector<VkFramebuffer> frameBuffers;
+        std::vector<VkDescriptorSet> descSets;
+    };
+
+    class VulkanCommand {
+    public:
+        virtual std::vector<BufferCommandState> getBufferState() = 0;
+
+        virtual std::vector<TextureCommandState> getTextureState() = 0;
+
+        virtual void execute(CommandBuffer* commandBuffer) = 0;
+    };
+
+    class VulkanBeginRenderPassCommand : public VulkanCommand {
+    public:
+        VulkanBeginRenderPassCommand(
+            RenderGraph* rg,
+            Uint32 rpi,
+            std::vector<TextureView*> ctv, 
+            TextureView* dtv, 
+            Extent3D sz
+        )
+        : renderGraph{rg},
+          renderPassIndex{rpi},
+          colorTextureViews{ctv},
+          depthStencilTextureView{dtv},
+          size{sz}
+        {
+
+        }
+
+        std::vector<BufferCommandState> getBufferState() override;
+
+        std::vector<TextureCommandState> getTextureState() override;
+
+        void execute(CommandBuffer* commandBuffer) override;
+
+    private:
+        RenderGraph* renderGraph;
+        Uint32 renderPassIndex;
+        std::vector<TextureView*> colorTextureViews;
+        TextureView* depthStencilTextureView;
+        Extent3D size;
+    };
+
+    class VulkanCommandEncoder : public CommandEncoder {
+    public:
+        std::shared_ptr<CommandBuffer> finish() override;
+        
+    private:
+        std::vector<VulkanCommand*> commandList;
+    };
+
+    class VulkanBarrier {
+
+    };
+
+    // ===========================================================================================================================
+    // Device Factory
+    // ===========================================================================================================================
 
     class VulkanFactory {
         static std::shared_ptr<Device> createDevice(DeviceDescriptor desc);

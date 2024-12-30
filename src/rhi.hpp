@@ -269,8 +269,7 @@ namespace RHI {
     enum class TextureState : Uint8 {
         eUndefined,
         eColorAttachment,
-        eDepthAttachment,
-        eStencilAttachment,
+        eDepthStencilAttachment,
         eColorTextureBinding,
         eDepthStencilTextureBinding,
         eStorageBinding,
@@ -387,6 +386,19 @@ namespace RHI {
     };
 
     // ===========================================================================================================================
+    // Shader Module
+    // ===========================================================================================================================
+
+    struct ShaderModuleDescriptor {
+        String filename;
+    };
+
+    class ShaderModule {
+    public:
+        virtual ShaderModuleDescriptor getDesc() = 0;
+    };
+
+    // ===========================================================================================================================
     // Bind Group
     // ===========================================================================================================================
 
@@ -425,19 +437,6 @@ namespace RHI {
 
     struct BindGroupLayoutDescriptor : BaseDescriptor {
         std::vector<BindGroupDescriptorEntry> entries;
-    };
-
-    // ===========================================================================================================================
-    // Shader Module
-    // ===========================================================================================================================
-
-    struct ShaderModuleDescriptor {
-        String filename;
-    };
-
-    class ShaderModule {
-    public:
-        virtual ShaderModuleDescriptor getDesc() = 0;
     };
 
     // ===========================================================================================================================
@@ -785,6 +784,17 @@ namespace RHI {
     // Render Graph Command Encoder
     // ===========================================================================================================================
     
+    enum class CommandState : Uint8 {
+        eOpen,
+        eEnded,
+        eSubmitted
+    };
+
+    class CommandsMixin {
+    public:
+        virtual CommandState getCommandState() = 0;
+    };
+    
     class BindCommandEncoder {
         virtual void bindBuffer(Uint32 binding, Buffer* buffer, Uint64 size = ULLONG_MAX, Uint64 offset = 0u) = 0; 
 
@@ -805,11 +815,11 @@ namespace RHI {
         virtual void drawIndexedIndirectCount(Buffer* indirectBuffer, Buffer* countBuffer, Uint64 indirectOffset = 0, Uint64 countOffset = 0) = 0;
     };
 
-    class PipelineCommandEncoder : DrawCommandEncoder, BindCommandEncoder {
+    class PipelineCommandEncoder : public DrawCommandEncoder, public BindCommandEncoder, public CommandsMixin {
         virtual void end() = 0;
     };
 
-    class RenderPassCommandEncoder {
+    class RenderPassCommandEncoder : public CommandsMixin {
         virtual PipelineCommandEncoder startPipeline(Uint32 pipelineIndex, Buffer* buffer, Uint64 offsets = 0) = 0;
         virtual PipelineCommandEncoder startPipeline(Uint32 pipelineIndex, std::vector<Buffer*> buffers, std::vector<Uint64> offsets = {}) = 0;
 
@@ -822,51 +832,19 @@ namespace RHI {
         virtual void end() = 0;
     };
 
-    class RenderGraphCommandEncoder {
+    class RenderGraphCommandEncoder : public CommandsMixin {
         virtual RenderPassCommandEncoder beginRenderPass(Uint32 renderPassIndex, std::vector<TextureView*> colorTextureViews, 
-            TextureView* depthStencilTextureViews, Extent3D size) = 0;
+            TextureView* depthStencilTextureView, Extent3D size) = 0;
 
         virtual void finish() = 0;
     };
 
     // ===========================================================================================================================
-    // Command Encoder
+    // Transfer Command Encoder
     // ===========================================================================================================================
 
-    enum class CommandState : Uint8 {
-        eOpen,
-        eEnded,
-        eSubmitted
-    };
-
-    struct CommandEncoderDescriptor {
-        QueueType queueType;
-    };
-
-    struct CopyTexture {
-        TextureView* view;
-        Origin3D origin{};
-    };
-
-    struct CopyBuffer {
-        Buffer* buffer;
-
-        Uint64 offset = 0;
-        Uint32 bytesPerRow;
-        Uint32 rowsPerImage;
-    };
-
-    class CommandsMixin {
+    class TransferCommandEncoder {
     public:
-        virtual CommandState getCommandState() = 0;
-    };
-
-    class CommandEncoder : public CommandsMixin {
-    public:
-        virtual CommandEncoderDescriptor getDesc() = 0;
-
-        virtual RenderGraphCommandEncoder startRenderGraph(RenderGraph* renderGraph) = 0;
-
         virtual void copyBufferToBuffer(
             Buffer* source,
             Uint64 sourceOffset,
@@ -899,8 +877,40 @@ namespace RHI {
             Uint64 size = ULLONG_MAX,
             Uint64 offset = 0
         ) = 0;
+    };
 
-        virtual void finish() = 0;
+    // ===========================================================================================================================
+    // Command Encoder
+    // ===========================================================================================================================    
+
+    struct CommandEncoderDescriptor {
+        QueueType queueType;
+    };
+
+    struct CopyTexture {
+        TextureView* view;
+        Origin3D origin{};
+    };
+
+    struct CopyBuffer {
+        Buffer* buffer;
+
+        Uint64 offset = 0;
+        Uint32 bytesPerRow;
+        Uint32 rowsPerImage;
+    };
+
+    class CommandBuffer {
+
+    };
+
+    class CommandEncoder : public TransferCommandEncoder, public CommandsMixin {
+    public:
+        virtual CommandEncoderDescriptor getDesc() = 0;
+
+        virtual RenderGraphCommandEncoder startRenderGraph(RenderGraph* renderGraph) = 0;
+
+        virtual std::shared_ptr<CommandBuffer> finish() = 0;
     };
 
     // ===========================================================================================================================

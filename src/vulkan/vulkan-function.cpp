@@ -243,10 +243,9 @@ namespace RHI {
             case TextureState::eUndefined : return VK_IMAGE_LAYOUT_UNDEFINED;
             case TextureState::eStorageBinding : return VK_IMAGE_LAYOUT_GENERAL;
             case TextureState::eColorAttachment : return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            case TextureState::eDepthAttachment : return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-            case TextureState::eStencilAttachment : return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+            case TextureState::eDepthStencilAttachment : return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             case TextureState::eColorTextureBinding : return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            case TextureState::eDepthStencilTextureBinding : return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+            case TextureState::eDepthStencilTextureBinding : return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
             case TextureState::eCopySrc : return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
             case TextureState::eCopyDst : return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
             case TextureState::ePresent : return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
