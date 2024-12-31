@@ -10,11 +10,20 @@ namespace RHI {
     // Class Definition
     // ===========================================================================================================================
 
+    class Device;
     class Buffer;
     class Texture;
     class TextureView;
     class Sampler;
     class RenderGraph;
+
+    class PipelineCommandEncoder;
+    class RenderPassCommandEncoder;
+    class RenderGraphCommandEncoder;
+
+    class CommandBuffer;
+    class Queue;
+    class QueueAsync;
 
     struct RenderGraphDescriptor;
     struct RenderPassDescriptor;
@@ -297,7 +306,6 @@ namespace RHI {
     class Texture {
     public:
         virtual TextureDescriptor getDesc() = 0;
-        virtual TextureState getState() = 0;
 
         virtual std::shared_ptr<TextureView> createView(TextureViewDescriptor desc) = 0;
     };
@@ -830,6 +838,19 @@ namespace RHI {
     // Transfer Command Encoder
     // ===========================================================================================================================
 
+    struct CopyTexture {
+        TextureView* view;
+        Origin3D origin{};
+    };
+
+    struct CopyBuffer {
+        Buffer* buffer;
+
+        Uint64 offset = 0;
+        Uint32 bytesPerRow;
+        Uint32 rowsPerImage;
+    };
+    
     class TransferCommandEncoder {
     public:
         virtual void copyBufferToBuffer(
@@ -872,19 +893,6 @@ namespace RHI {
 
     struct CommandEncoderDescriptor {
         QueueType queueType;
-    };
-
-    struct CopyTexture {
-        TextureView* view;
-        Origin3D origin{};
-    };
-
-    struct CopyBuffer {
-        Buffer* buffer;
-
-        Uint64 offset = 0;
-        Uint32 bytesPerRow;
-        Uint32 rowsPerImage;
     };
 
     class CommandBuffer {
@@ -942,6 +950,7 @@ namespace RHI {
 		virtual std::shared_ptr<Texture> createTexture(TextureDescriptor desc) = 0;
 		virtual std::shared_ptr<Sampler> createSampler(SamplerDescriptor desc) = 0;
         virtual std::shared_ptr<RenderGraph> createRenderGraph(RenderGraphDescriptor desc) = 0;
+        virtual std::shared_ptr<ShaderModule> createShaderModule(ShaderModuleDescriptor desc) = 0;
 
 		// QuerySet createQuerySet(QuerySetDescriptor desc);
 

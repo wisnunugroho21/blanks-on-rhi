@@ -394,6 +394,7 @@ namespace RHI {
             case PipelineStage::eEarlyFragmentTest: return VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
             case PipelineStage::eLateFragmentTest: return VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
             case PipelineStage::eTransfer: return VK_PIPELINE_STAGE_TRANSFER_BIT;
+            case PipelineStage::ePresent: return VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
         }
 
         return VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;

@@ -71,6 +71,8 @@ namespace RHI {
 
     class CommandBarrier {
     public:
+        virtual ~CommandBarrier() {}
+
         virtual void recordBufferBarrier(CommandBuffer* commandBuffer, BufferInfo target, PipelineStage stage, ResourceAccess access) = 0;
 
         virtual void recordTextureBarrier(CommandBuffer* commandBuffer, TextureView* target, TextureState state,
@@ -87,6 +89,8 @@ namespace RHI {
 
     class CommandItem {
     public:
+        virtual ~CommandItem() {}
+
         virtual std::vector<BufferCommandState> getBufferState() = 0;
 
         virtual std::vector<TextureCommandState> getTextureState() = 0;
@@ -116,7 +120,7 @@ namespace RHI {
 
         std::vector<TextureCommandState> getTextureState() override;
 
-        void execute(CommandBuffer* commandBuffer) override {}
+        virtual void execute(CommandBuffer* commandBuffer) override {}
 
     protected:
         RenderGraph* renderGraph;
@@ -124,6 +128,10 @@ namespace RHI {
         std::vector<TextureView*> colorTextureViews;
         TextureView* depthStencilTextureView;
         Extent3D size;
+    };
+
+    class SetPipelineCommand : public CommandItem {
+
     };
 
     // ===========================================================================================================================
@@ -140,7 +148,7 @@ namespace RHI {
           barrier{br} 
         {}
 
-        ~CommonCommandEncoder() {
+        virtual ~CommonCommandEncoder() {
             delete this->barrier;
         }
 
@@ -173,7 +181,22 @@ namespace RHI {
 
         }
 
+        CommandState getCommandState() override { return this->state; }
+
+        std::shared_ptr<PipelineCommandEncoder> startPipeline(Uint32 pipelineIndex, Buffer* buffer, Uint64 offsets = 0) override {}
+        std::shared_ptr<PipelineCommandEncoder> startPipeline(Uint32 pipelineIndex, std::vector<Buffer*> buffers, std::vector<Uint64> offsets = {}) override {}
+
+        std::shared_ptr<PipelineCommandEncoder> startPipeline(Uint32 pipelineIndex, Buffer* vertexBuffer, Buffer* indexBuffer, 
+            Uint64 vertexOffsets = 0,  Uint64 indexOffset = 0) override {}
+
+        std::shared_ptr<PipelineCommandEncoder> startPipeline(Uint32 pipelineIndex, std::vector<Buffer*> vertexBuffers, Buffer* indexBuffer, 
+            std::vector<Uint64> vertexOffsets = {},  Uint64 indexOffset = 0) override {}
+
+        void end() override {}
+
     private:
+        CommandState state;
+
         CommandEncoder* commandEncoder;
         RenderGraph* renderGraph;
         Uint32 renderPassIndex;

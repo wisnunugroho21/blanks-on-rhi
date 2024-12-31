@@ -1,6 +1,6 @@
 #include "vulkan-backend.hpp"
 
-#include <utility>
+#include <vk_mem_alloc.h>
 
 namespace RHI {
     std::shared_ptr<Texture> VulkanDevice::createTexture(TextureDescriptor desc) {
@@ -9,13 +9,13 @@ namespace RHI {
             .imageType = convertDimensionIntoVulkan(desc.dimension),
             .format = convertTextureFormatIntoVulkan(desc.format),
             .extent.width = desc.size.width,
-            .extent.height = desc.dimension == TextureDimension::e1D ? 1.0f : desc.size.height,
-            .extent.depth = desc.dimension == TextureDimension::e3D ? desc.size.depthOrArrayLayers : 1.0f,
+            .extent.height = desc.dimension == TextureDimension::e1D ? 1u : desc.size.height,
+            .extent.depth = desc.dimension == TextureDimension::e3D ? desc.size.depthOrArrayLayers : 1u,
             .mipLevels = desc.mipLevelCount,
             .arrayLayers = desc.dimension == TextureDimension::e2D ? desc.size.depthOrArrayLayers : 1u,
             .tiling = VK_IMAGE_TILING_OPTIMAL,
             .usage = convertImageUsageIntoVulkan(desc.usage),
-            .initialLayout = convertTextureStateIntoVulkan(desc.initialState)
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
         };
 
         VmaAllocationCreateInfo allocInfo{

@@ -1,5 +1,7 @@
 #include "vulkan-backend.hpp"
 
+#include <vk_mem_alloc.h>
+
 namespace RHI {
     std::shared_ptr<Buffer> VulkanDevice::createBuffer(BufferDescriptor desc) {
         VkBufferCreateInfo bufferInfo{

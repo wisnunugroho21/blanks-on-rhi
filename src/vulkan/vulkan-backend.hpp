@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-
 #include <vk_mem_alloc.h>
 
 #include "../rhi.hpp"
@@ -39,6 +38,8 @@ namespace RHI {
         {
 
         }
+
+        virtual ~VulkanDevice();
         
         VkDevice getNative() { return this->device; }
         VmaAllocator getMemoryAllocator() { return this->memoryAllocator; }
@@ -48,6 +49,7 @@ namespace RHI {
         std::shared_ptr<Texture> createTexture(TextureDescriptor descriptor) override;
         std::shared_ptr<Sampler> createSampler(SamplerDescriptor desc) override;
         std::shared_ptr<RenderGraph> createRenderGraph(RenderGraphDescriptor desc) override;
+        std::shared_ptr<ShaderModule> createShaderModule(ShaderModuleDescriptor desc) override;
         
     private:
         VkInstance instance;
@@ -83,7 +85,7 @@ namespace RHI {
             this->mapState = BufferMapState::eUnmapped;
         }
 
-        ~VulkanBuffer();
+        virtual ~VulkanBuffer();
 
         BufferDescriptor getDesc() override { return this->desc; }
 
@@ -118,18 +120,6 @@ namespace RHI {
     // ===========================================================================================================================
     // Texture
     // ===========================================================================================================================
-
-    enum class TextureState : Uint8 {
-        eUndefined,
-        eColorAttachment,
-        eDepthStencilAttachment,
-        eColorTextureBinding,
-        eDepthStencilTextureBinding,
-        eStorageBinding,
-        eCopySrc,
-        eCopyDst,
-        ePresent
-    };
     
     class VulkanTexture : public Texture {
     public:
@@ -147,7 +137,7 @@ namespace RHI {
 
         }
 
-        ~VulkanTexture();
+        virtual ~VulkanTexture();
 
         TextureDescriptor getDesc() override { return this->desc; }
 
@@ -184,7 +174,7 @@ namespace RHI {
 
         }
 
-        ~VulkanTextureView();
+        virtual ~VulkanTextureView();
 
         TextureViewDescriptor getDesc() override { return this->desc; }
 
@@ -219,7 +209,7 @@ namespace RHI {
 
         }
 
-        ~VulkanSampler();
+        virtual ~VulkanSampler();
 
         SamplerDescriptor getDesc() override { return this->desc; }
 
@@ -259,7 +249,7 @@ namespace RHI {
 
         }
 
-        ~VulkanShaderModule();
+        virtual ~VulkanShaderModule();
 
         ShaderModuleDescriptor getDesc() override { return this->desc; }
 
@@ -318,6 +308,10 @@ namespace RHI {
 
         }
 
+        virtual ~VulkanRenderGraph() {}
+
+        RenderGraphDescriptor getDesc() override { return this->desc; }
+
         std::vector<VulkanRenderPassNode> getNative() { return this->renderPassNodes; }
 
     protected:
@@ -334,6 +328,8 @@ namespace RHI {
 
     class VulkanCommandBarrier : CommandBarrier {
     public:
+        virtual ~VulkanCommandBarrier() {}
+
         void recordBufferBarrier(CommandBuffer* commandBuffer, BufferInfo target, PipelineStage stage, ResourceAccess access);
 
         void recordTextureBarrier(CommandBuffer* commandBuffer, TextureView* target, TextureState state,
@@ -354,6 +350,8 @@ namespace RHI {
             VulkanDevice* d
         ) 
         : device{d} {}
+
+        virtual ~VulkanCommandBuffer() {}
 
         VkCommandBuffer getNative() { return this->commandBuffer; }
 
@@ -385,6 +383,8 @@ namespace RHI {
             Extent3D sz
         )
         : BeginRenderPassCommand{rg, rpi, ctv, dtv, sz} {}
+
+        virtual ~VulkanBeginRenderPassCommand() {}
 
         void execute(CommandBuffer* commandBuffer) override;
     };
