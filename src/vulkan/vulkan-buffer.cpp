@@ -23,13 +23,13 @@ namespace RHI {
         return std::make_shared<VulkanBuffer>(desc, this, buffer, memoryAllocation);
     }
 
-    void VulkanBuffer::insertData(void* pointerData, Uint64 size, Uint64 offset) {
+    void VulkanBuffer::writeData(void* pointerData, Uint64 size, Uint64 offset) {
         if (vmaCopyMemoryToAllocation(this->device->getMemoryAllocator(), pointerData, this->memoryAllocation, offset, size) != VK_SUCCESS) {
             throw std::runtime_error("Failed to insert data!");
         }
     }
 
-    void VulkanBuffer::takeData(void* pointerData, Uint64 size, Uint64 offset) {
+    void VulkanBuffer::readData(void* pointerData, Uint64 size, Uint64 offset) {
         if (vmaCopyAllocationToMemory(this->device->getMemoryAllocator(), this->memoryAllocation, offset, pointerData, size) != VK_SUCCESS) {
             throw std::runtime_error("Failed to take data!");
         }

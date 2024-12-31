@@ -89,8 +89,8 @@ namespace RHI {
         void* getCurrentMapped() override { return this->mapped; }
 		BufferMapState getMapState() override { return this->mapState; }
 
-        void insertData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
-        void takeData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
+        void writeData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
+        void readData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) override;
 
         void* map() override;
         void unmap() override;

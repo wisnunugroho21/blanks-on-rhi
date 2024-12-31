@@ -162,8 +162,8 @@ namespace RHI {
         virtual void* getCurrentMapped() = 0;
 		virtual BufferMapState getMapState() = 0;
 
-        virtual void insertData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
-        virtual void takeData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
+        virtual void writeData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
+        virtual void readData(void* pointerData, Uint64 size = ULLONG_MAX, Uint64 offset = 0) = 0;
 
         virtual void* map() = 0;
         virtual void unmap() = 0;
