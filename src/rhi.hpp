@@ -1,4 +1,4 @@
-#pragma onceRenderGraphDescriptor
+#pragma once
 
 #include <string>
 #include <memory>
@@ -807,20 +807,20 @@ namespace RHI {
     };
 
     class RenderPassCommandEncoder : public CommandsMixin {
-        virtual PipelineCommandEncoder startPipeline(Uint32 pipelineIndex, Buffer* buffer, Uint64 offsets = 0) = 0;
-        virtual PipelineCommandEncoder startPipeline(Uint32 pipelineIndex, std::vector<Buffer*> buffers, std::vector<Uint64> offsets = {}) = 0;
+        virtual std::shared_ptr<PipelineCommandEncoder> startPipeline(Uint32 pipelineIndex, Buffer* buffer, Uint64 offsets = 0) = 0;
+        virtual std::shared_ptr<PipelineCommandEncoder> startPipeline(Uint32 pipelineIndex, std::vector<Buffer*> buffers, std::vector<Uint64> offsets = {}) = 0;
 
-        virtual PipelineCommandEncoder startPipeline(Uint32 pipelineIndex, Buffer* vertexBuffer, Buffer* indexBuffer, 
+        virtual std::shared_ptr<PipelineCommandEncoder> startPipeline(Uint32 pipelineIndex, Buffer* vertexBuffer, Buffer* indexBuffer, 
             Uint64 vertexOffsets = 0,  Uint64 indexOffset = 0) = 0;
 
-        virtual PipelineCommandEncoder startPipeline(Uint32 pipelineIndex, std::vector<Buffer*> vertexBuffers, Buffer* indexBuffer, 
+        virtual std::shared_ptr<PipelineCommandEncoder> startPipeline(Uint32 pipelineIndex, std::vector<Buffer*> vertexBuffers, Buffer* indexBuffer, 
             std::vector<Uint64> vertexOffsets = {},  Uint64 indexOffset = 0) = 0;
 
         virtual void end() = 0;
     };
 
     class RenderGraphCommandEncoder : public CommandsMixin {
-        virtual RenderPassCommandEncoder beginRenderPass(Uint32 renderPassIndex, std::vector<TextureView*> colorTextureViews, 
+        virtual std::shared_ptr<RenderPassCommandEncoder> beginRenderPass(Uint32 renderPassIndex, std::vector<TextureView*> colorTextureViews, 
             TextureView* depthStencilTextureView, Extent3D size) = 0;
 
         virtual void finish() = 0;
@@ -895,7 +895,7 @@ namespace RHI {
     public:
         virtual CommandEncoderDescriptor getDesc() = 0;
 
-        virtual RenderGraphCommandEncoder startRenderGraph(RenderGraph* renderGraph) = 0;
+        virtual std::shared_ptr<RenderGraphCommandEncoder> startRenderGraph(RenderGraph* renderGraph) = 0;
 
         virtual std::shared_ptr<CommandBuffer> finish() = 0;
     };

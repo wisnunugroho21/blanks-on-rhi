@@ -197,7 +197,7 @@ namespace RHI {
         return TextureState::eUndefined;
     }
 
-    void VulkanBarrier::recordBufferBarrier(CommandBuffer* commandBuffer, BufferInfo target, PipelineStage stage, ResourceAccess access) {
+    void VulkanCommandBarrier::recordBufferBarrier(CommandBuffer* commandBuffer, BufferInfo target, PipelineStage stage, ResourceAccess access) {
         bool isBarrierExist = false;
 
         for (auto &&curBufferState : this->curBufferStates) {
@@ -244,7 +244,7 @@ namespace RHI {
         }
     }
 
-    void VulkanBarrier::recordTextureBarrier(CommandBuffer* commandBuffer, TextureView* target, TextureState state,
+    void VulkanCommandBarrier::recordTextureBarrier(CommandBuffer* commandBuffer, TextureView* target, TextureState state,
         PipelineStage stage, ResourceAccess access) 
     {   
         bool isBarrierExist = false;

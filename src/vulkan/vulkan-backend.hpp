@@ -5,6 +5,7 @@
 #include <vk_mem_alloc.h>
 
 #include "../rhi.hpp"
+#include "../common/command.hpp"
 
 namespace RHI {
     // ===========================================================================================================================
@@ -331,19 +332,7 @@ namespace RHI {
     // Barrier
     // ===========================================================================================================================
 
-    struct BufferBarrierState {
-        PipelineStage stage;
-        ResourceAccess access;
-        BufferInfo desc;
-    };
-
-    struct TextureBarrierState {
-        PipelineStage stage;
-        ResourceAccess access;
-        TextureView* target;
-    };
-
-    class VulkanBarrier {
+    class VulkanCommandBarrier : CommandBarrier {
     public:
         void recordBufferBarrier(CommandBuffer* commandBuffer, BufferInfo target, PipelineStage stage, ResourceAccess access);
 
@@ -358,56 +347,13 @@ namespace RHI {
     // ===========================================================================================================================
     // Command Encoder
     // ===========================================================================================================================
-
-    enum class PipelineStage : FlagsConstant {
-        eCompute            = 0x0001,
-        eVertex             = 0x0002,
-        eFragment           = 0x0004,
-        eTessellCtrl        = 0x0008,
-        eTessellEval        = 0x0010,
-        eTask               = 0x0020,
-        eMesh               = 0x0040,
-        eTransfer           = 0x0080,
-        eAttachmentOutput   = 0x0100,
-        eEarlyFragmentTest  = 0x0200,
-        eLateFragmentTest   = 0x0400,
-        ePresent            = 0x0800
-    };
-
-    enum class TextureState : Uint8 {
-        eUndefined,
-        eColorAttachment,
-        eDepthStencilAttachment,
-        eColorTextureBinding,
-        eDepthStencilTextureBinding,
-        eStorageBinding,
-        eCopySrc,
-        eCopyDst,
-        ePresent
-    };
-   
-    struct BufferInfo {
-        Buffer* buffer;
-        Uint64 size;
-        Uint64 offset;
-    };
-
-    struct BufferCommandState {
-        BufferInfo target;
-        PipelineStage stage;
-        ResourceAccess access;
-    };
-
-    struct TextureCommandState {
-        TextureView* target;
-        TextureState state;
-        PipelineStage stage;
-        ResourceAccess access;
-    };
     
     class VulkanCommandBuffer : public CommandBuffer {
     public:
-        VulkanCommandBuffer(VulkanDevice* d) : device{d} {}
+        VulkanCommandBuffer(
+            VulkanDevice* d
+        ) 
+        : device{d} {}
 
         VkCommandBuffer getNative() { return this->commandBuffer; }
 
@@ -429,16 +375,7 @@ namespace RHI {
         std::vector<VkDescriptorSet> descSets;
     };
 
-    class VulkanCommand {
-    public:
-        virtual std::vector<BufferCommandState> getBufferState() = 0;
-
-        virtual std::vector<TextureCommandState> getTextureState() = 0;
-
-        virtual void execute(CommandBuffer* commandBuffer) = 0;
-    };
-
-    class VulkanBeginRenderPassCommand : public VulkanCommand {
+    class VulkanBeginRenderPassCommand : public BeginRenderPassCommand {
     public:
         VulkanBeginRenderPassCommand(
             RenderGraph* rg,
@@ -447,72 +384,9 @@ namespace RHI {
             TextureView* dtv, 
             Extent3D sz
         )
-        : renderGraph{rg},
-          renderPassIndex{rpi},
-          colorTextureViews{ctv},
-          depthStencilTextureView{dtv},
-          size{sz}
-        {
-
-        }
-
-        std::vector<BufferCommandState> getBufferState() override;
-
-        std::vector<TextureCommandState> getTextureState() override;
+        : BeginRenderPassCommand{rg, rpi, ctv, dtv, sz} {}
 
         void execute(CommandBuffer* commandBuffer) override;
-
-    private:
-        RenderGraph* renderGraph;
-        Uint32 renderPassIndex;
-        std::vector<TextureView*> colorTextureViews;
-        TextureView* depthStencilTextureView;
-        Extent3D size;
-    };
-
-    class VulkanRenderGraphCommandEncoder : public RenderGraphCommandEncoder {
-    public:
-        VulkanRenderGraphCommandEncoder(
-            CommandEncoder* ce,
-            RenderGraph* rg
-        ) 
-        : commandEncoder{ce},
-          renderGraph{rg}
-        {
-
-        }
-
-        RenderPassCommandEncoder beginRenderPass(Uint32 renderPassIndex, std::vector<TextureView*> colorTextureViews, 
-            TextureView* depthStencilTextureView, Extent3D size) override
-        {
-            static_cast<VulkanCommandEncoder*>(this->commandEncoder)->getCommandList().emplace_back(
-                new VulkanBeginRenderPassCommand(this->renderGraph, renderPassIndex, colorTextureViews, 
-                    depthStencilTextureView, size)
-            );
-        }
-
-    private:
-        CommandEncoder* commandEncoder;
-        RenderGraph* renderGraph;
-    };
-
-    class VulkanCommandEncoder : public CommandEncoder {
-    public:
-        VulkanCommandEncoder(VulkanDevice* d) : device{d} {}
-
-        virtual RenderGraphCommandEncoder startRenderGraph(RenderGraph* renderGraph) override {
-            
-        }
-
-        std::shared_ptr<CommandBuffer> finish() override;
-
-        std::vector<VulkanCommand*> getCommandList() { return this->commandList; }
-        
-    private:
-        std::vector<VulkanCommand*> commandList;
-
-        VulkanDevice* device;
-        VulkanBarrier barrier;
     };
 
     // ===========================================================================================================================
