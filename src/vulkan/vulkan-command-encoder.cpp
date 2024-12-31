@@ -1,66 +1,28 @@
 #include "vulkan-backend.hpp"
 
 namespace RHI {
-    struct ArrayInfo{
-        uint32_t offset;
-        uint32_t size;
-    };
-
     std::shared_ptr<CommandBuffer> VulkanCommandEncoder::finish() {
-        std::vector<ArrayInfo> bufferStateArrayInfos;
-        std::vector<ArrayInfo> textureStateArrayInfos;
+        std::shared_ptr<CommandBuffer> commandBuffer = std::make_shared<VulkanCommandBuffer>(this->device);
 
-        std::vector<TextureCommandState> textureCommandStates;
         for (auto &&command : this->commandList) {
-            std::vector<TextureCommandState> curTextStates = command->getTextureState();
-
-            if (textureStateArrayInfos.empty()) {
-                textureStateArrayInfos.emplace_back(ArrayInfo{
-                    .offset = 0,
-                    .size = static_cast<Uint32>(curTextStates.size())
-                });
-            } else {
-                ArrayInfo textureStateArrayInfo = textureStateArrayInfos[textureStateArrayInfos.size() - 1];
-
-                textureStateArrayInfos.emplace_back(ArrayInfo{
-                    .offset = textureStateArrayInfo.offset + textureStateArrayInfo.size,
-                    .size = static_cast<Uint32>(curTextStates.size())
-                });
+            for (auto &&bufferState : command->getBufferState()) {
+                this->barrier.recordBufferBarrier(commandBuffer.get(), bufferState.target, 
+                    bufferState.stage, bufferState.access);
             }
 
-            for (auto &&curTextState : curTextStates) {
-                textureCommandStates.emplace_back(curTextState);
+            for (auto &&textureState : command->getTextureState()) {
+                this->barrier.recordTextureBarrier(commandBuffer.get(), textureState.target, textureState.state,
+                    textureState.stage, textureState.access);
             }
+            
+            command->execute(commandBuffer.get());
         }
 
-        for (size_t i = 0; i < this->commandList.size(); i++) {
-            std::vector<TextureCommandState> curTextStates = this->commandList[i]->getTextureState();
-
-            for (auto &&curTextState : curTextStates) {
-                if (curTextState.access != ResourceAccess::eReadOnly) {
-                    ArrayInfo textureArrayInfo = textureStateArrayInfos[i];
-
-                    for (size_t j = 0; j < textureArrayInfo.offset; j++) {
-                        
-                    }
-
-
-
-                    for (size_t j = textureArrayInfo.offset + textureArrayInfo.size; j < textureCommandStates.size(); j++) {
-                        
-                    }
-                }
-            }
-            
-
-
-
-            
-            
+        for (auto &&command : this->commandList) {
+            delete command;
         }
-        
-        
 
+        return commandBuffer;
     }
 
     std::vector<BufferCommandState> VulkanBeginRenderPassCommand::getBufferState() {
@@ -72,7 +34,7 @@ namespace RHI {
 
         for (auto &&colorTextureView : this->colorTextureViews) {
             textureCommandStates.emplace_back(TextureCommandState{
-                .textureView = colorTextureView,
+                .target = colorTextureView,
                 .state = TextureState::eColorAttachment,
                 .stage = PipelineStage::eAttachmentOutput,
                 .access = ResourceAccess::eWriteOnly
@@ -81,7 +43,7 @@ namespace RHI {
 
         if (this->depthStencilTextureView != nullptr) {
             textureCommandStates.emplace_back(TextureCommandState{
-                .textureView = this->depthStencilTextureView,
+                .target = this->depthStencilTextureView,
                 .state = TextureState::eDepthStencilAttachment,
                 .stage = PipelineStage::eLateFragmentTest,
                 .access = ResourceAccess::eWriteOnly

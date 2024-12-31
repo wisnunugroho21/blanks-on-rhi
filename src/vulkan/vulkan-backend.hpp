@@ -118,6 +118,18 @@ namespace RHI {
     // Texture
     // ===========================================================================================================================
 
+    enum class TextureState : Uint8 {
+        eUndefined,
+        eColorAttachment,
+        eDepthStencilAttachment,
+        eColorTextureBinding,
+        eDepthStencilTextureBinding,
+        eStorageBinding,
+        eCopySrc,
+        eCopyDst,
+        ePresent
+    };
+    
     class VulkanTexture : public Texture {
     public:
         VulkanTexture(
@@ -140,14 +152,13 @@ namespace RHI {
 
         std::shared_ptr<TextureView> createView(TextureViewDescriptor descriptor) override;
 
-        void setState(TextureState state) { this->state = state; }
-
         VkImage getNative() { return this->image; }
         VmaAllocation getMemoryAllocation() { return this->memoryAllocation; }
 
+        TextureState state;
+
     protected:
         TextureDescriptor desc;
-        TextureState state;
 
     private:
         VulkanDevice* device;
@@ -317,6 +328,34 @@ namespace RHI {
     };
 
     // ===========================================================================================================================
+    // Barrier
+    // ===========================================================================================================================
+
+    struct BufferBarrierState {
+        PipelineStage stage;
+        ResourceAccess access;
+        BufferInfo desc;
+    };
+
+    struct TextureBarrierState {
+        PipelineStage stage;
+        ResourceAccess access;
+        TextureView* target;
+    };
+
+    class VulkanBarrier {
+    public:
+        void recordBufferBarrier(CommandBuffer* commandBuffer, BufferInfo target, PipelineStage stage, ResourceAccess access);
+
+        void recordTextureBarrier(CommandBuffer* commandBuffer, TextureView* target, TextureState state,
+            PipelineStage stage, ResourceAccess access);
+
+    private:
+        std::vector<BufferBarrierState> curBufferStates;
+        std::vector<TextureBarrierState> curTextureStates;
+    };
+
+    // ===========================================================================================================================
     // Command Encoder
     // ===========================================================================================================================
 
@@ -332,6 +371,7 @@ namespace RHI {
         eAttachmentOutput   = 0x0100,
         eEarlyFragmentTest  = 0x0200,
         eLateFragmentTest   = 0x0400,
+        ePresent            = 0x0800
     };
 
     enum class TextureState : Uint8 {
@@ -353,13 +393,13 @@ namespace RHI {
     };
 
     struct BufferCommandState {
-        BufferInfo info;
+        BufferInfo target;
         PipelineStage stage;
         ResourceAccess access;
     };
 
     struct TextureCommandState {
-        TextureView* textureView;
+        TextureView* target;
         TextureState state;
         PipelineStage stage;
         ResourceAccess access;
@@ -430,16 +470,49 @@ namespace RHI {
         Extent3D size;
     };
 
+    class VulkanRenderGraphCommandEncoder : public RenderGraphCommandEncoder {
+    public:
+        VulkanRenderGraphCommandEncoder(
+            CommandEncoder* ce,
+            RenderGraph* rg
+        ) 
+        : commandEncoder{ce},
+          renderGraph{rg}
+        {
+
+        }
+
+        RenderPassCommandEncoder beginRenderPass(Uint32 renderPassIndex, std::vector<TextureView*> colorTextureViews, 
+            TextureView* depthStencilTextureView, Extent3D size) override
+        {
+            static_cast<VulkanCommandEncoder*>(this->commandEncoder)->getCommandList().emplace_back(
+                new VulkanBeginRenderPassCommand(this->renderGraph, renderPassIndex, colorTextureViews, 
+                    depthStencilTextureView, size)
+            );
+        }
+
+    private:
+        CommandEncoder* commandEncoder;
+        RenderGraph* renderGraph;
+    };
+
     class VulkanCommandEncoder : public CommandEncoder {
     public:
+        VulkanCommandEncoder(VulkanDevice* d) : device{d} {}
+
+        virtual RenderGraphCommandEncoder startRenderGraph(RenderGraph* renderGraph) override {
+            
+        }
+
         std::shared_ptr<CommandBuffer> finish() override;
+
+        std::vector<VulkanCommand*> getCommandList() { return this->commandList; }
         
     private:
         std::vector<VulkanCommand*> commandList;
-    };
 
-    class VulkanBarrier {
-
+        VulkanDevice* device;
+        VulkanBarrier barrier;
     };
 
     // ===========================================================================================================================
@@ -532,9 +605,5 @@ namespace RHI {
 
     VkIndexType convertIndexFormatIntoVulkan(IndexFormat format);
 
-    VkPipelineStageFlags convertPipelineStageIntoVulkan(PipelineStageFlags stage);
-
-    VkAccessFlags convertBufferAccessIntoVulkan(PipelineStageFlags stage, ResourceAccess access, Buffer *buffer);
-
-    VkAccessFlags convertTextureAccessIntoVulkan(PipelineStageFlags stage, ResourceAccess access, Texture *texture);
+    VkPipelineStageFlags convertPipelineStageIntoVulkan(PipelineStage stage);
 }

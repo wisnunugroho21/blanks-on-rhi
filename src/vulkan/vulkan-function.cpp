@@ -381,6 +381,24 @@ namespace RHI {
         return shaderStages;
     }
 
+    VkPipelineStageFlags convertPipelineStageIntoVulkan(PipelineStage stage) {
+        switch(stage) {
+            case PipelineStage::eCompute: return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            case PipelineStage::eVertex: return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+            case PipelineStage::eFragment: return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            case PipelineStage::eTessellCtrl: return VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
+            case PipelineStage::eTessellEval: return VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+            case PipelineStage::eTask: return VK_PIPELINE_STAGE_TASK_SHADER_BIT_EXT;
+            case PipelineStage::eMesh: return VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT;
+            case PipelineStage::eAttachmentOutput: return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            case PipelineStage::eEarlyFragmentTest: return VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+            case PipelineStage::eLateFragmentTest: return VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+            case PipelineStage::eTransfer: return VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }
+
+        return VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    }
+
     VkViewport convertViewportIntoVulkan(Viewport viewport) {
         VkViewport vulkanViewPort{
             .x = viewport.x,

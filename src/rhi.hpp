@@ -266,18 +266,6 @@ namespace RHI {
         eDepthStencilAttachment = 0x20
     };
 
-    enum class TextureState : Uint8 {
-        eUndefined,
-        eColorAttachment,
-        eDepthStencilAttachment,
-        eColorTextureBinding,
-        eDepthStencilTextureBinding,
-        eStorageBinding,
-        eCopySrc,
-        eCopyDst,
-        ePresent
-    };
-
     struct TextureDescriptor {
         Extent3D size;
         TextureFormat format;
@@ -287,7 +275,6 @@ namespace RHI {
         Uint32 sampleCount = 1;
 
         TextureDimension dimension = TextureDimension::e2D;
-        TextureState initialState = TextureState::eUndefined;
     };
 
     struct TextureSubresource {
