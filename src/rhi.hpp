@@ -895,8 +895,12 @@ namespace RHI {
         QueueType queueType;
     };
 
-    class CommandBuffer {
+    struct CommandBufferDescriptor {
+        QueueType queueType;
+    };
 
+    class CommandBuffer {
+        virtual CommandBufferDescriptor getDesc() = 0;
     };
 
     class CommandEncoder : public TransferCommandEncoder, public CommandsMixin {

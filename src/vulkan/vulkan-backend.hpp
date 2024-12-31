@@ -39,7 +39,7 @@ namespace RHI {
 
         }
 
-        virtual ~VulkanDevice();
+        virtual ~VulkanDevice() {}
         
         VkDevice getNative() { return this->device; }
         VmaAllocator getMemoryAllocator() { return this->memoryAllocator; }
@@ -308,7 +308,7 @@ namespace RHI {
 
         }
 
-        virtual ~VulkanRenderGraph() {}
+        virtual ~VulkanRenderGraph();
 
         RenderGraphDescriptor getDesc() override { return this->desc; }
 
@@ -347,11 +347,14 @@ namespace RHI {
     class VulkanCommandBuffer : public CommandBuffer {
     public:
         VulkanCommandBuffer(
-            VulkanDevice* d
+            VulkanDevice* d,
+            QueueType queueType
         ) 
         : device{d} {}
 
-        virtual ~VulkanCommandBuffer() {}
+        virtual ~VulkanCommandBuffer();
+
+        CommandBufferDescriptor getDesc() override { return this->desc; }
 
         VkCommandBuffer getNative() { return this->commandBuffer; }
 
@@ -364,6 +367,8 @@ namespace RHI {
         std::vector<VkDescriptorSet> getDescSets() {
             return this->descSets;
         }
+    protected:
+        CommandBufferDescriptor desc;
 
     private:
         VulkanDevice* device;
@@ -387,6 +392,40 @@ namespace RHI {
         virtual ~VulkanBeginRenderPassCommand() {}
 
         void execute(CommandBuffer* commandBuffer) override;
+    };
+
+    // ===========================================================================================================================
+    // Queue
+    // ===========================================================================================================================
+
+    class VulkanQueue : public Queue {
+    public:
+        VulkanQueue(
+            QueueDescriptor desc,
+            VkQueue q,
+            Uint32 fi
+        )
+        : desc{desc},
+          queue{q},
+          familyIndex{fi}
+        {
+
+        }
+
+        QueueDescriptor getDesc() override { return this->desc; }
+
+        void submit(std::vector<CommandEncoder*> commandBuffers) override;
+
+        VkQueue getNative() { return this->queue; }
+
+        Uint32 getFamilyIndex() { return this->familyIndex; }
+
+    protected:
+        QueueDescriptor desc;
+
+    private:
+        VkQueue queue;
+        Uint32 familyIndex;
     };
 
     // ===========================================================================================================================

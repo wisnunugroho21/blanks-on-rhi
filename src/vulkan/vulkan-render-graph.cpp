@@ -357,4 +357,20 @@ namespace RHI {
 
         return std::make_shared<VulkanRenderGraph>(desc, this, renderPassNodes);
     }
+
+    VulkanRenderGraph::~VulkanRenderGraph() {
+        VkDevice nativeDevice = this->device->getNative();
+
+        for (auto &&renderPassNode : this->renderPassNodes) {
+            for (auto &&pipelineNode : renderPassNode.pipelineNodes) {
+                for (auto &&bindGroupNode : pipelineNode.bindGroupNodes) {
+                    vkDestroyDescriptorSetLayout(nativeDevice, bindGroupNode.bindGroupLayout, nullptr);
+                }
+
+                vkDestroyPipelineLayout(nativeDevice, pipelineNode.pipelineLayout, nullptr);
+            }
+
+            vkDestroyRenderPass(nativeDevice, renderPassNode.renderPass, nullptr);
+        }
+    }
 }
