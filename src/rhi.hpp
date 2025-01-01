@@ -925,17 +925,17 @@ namespace RHI {
     struct QueueDescriptor {
         QueueType type;
         uint32_t index;
-        uint32_t maxSubmission;
+        uint32_t maxSubmission = 3;
     };
 
     class QueueAsync {
-
+        virtual Uint32 getSubmissionId() = 0;
     };
 
     class Queue {
     public:
         virtual QueueDescriptor getDesc() = 0;
-        virtual void submit(std::vector<CommandEncoder*> commandBuffers) = 0;
+        virtual std::shared_ptr<QueueAsync> submit(std::vector<CommandBuffer*> commandBuffers, std::vector<std::shared_ptr<QueueAsync>> signaled) = 0;
     }; 
 
     // ===========================================================================================================================
@@ -948,18 +948,13 @@ namespace RHI {
 
     class Device {
     public:
-		Device(DeviceDescriptor desc) : desc{desc} {}
+		virtual DeviceDescriptor getDesc() = 0;
 
 		virtual std::shared_ptr<Buffer> createBuffer(BufferDescriptor desc) = 0;
 		virtual std::shared_ptr<Texture> createTexture(TextureDescriptor desc) = 0;
 		virtual std::shared_ptr<Sampler> createSampler(SamplerDescriptor desc) = 0;
         virtual std::shared_ptr<RenderGraph> createRenderGraph(RenderGraphDescriptor desc) = 0;
         virtual std::shared_ptr<ShaderModule> createShaderModule(ShaderModuleDescriptor desc) = 0;
-
-		// QuerySet createQuerySet(QuerySetDescriptor desc);
-
-    protected:
-        DeviceDescriptor desc;
     };
 };
 

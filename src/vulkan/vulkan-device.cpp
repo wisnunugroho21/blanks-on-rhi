@@ -151,7 +151,7 @@ namespace RHI {
         }
     }
 
-    void createInstance(DeviceDescriptor desc, VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger) {
+    void VulkanDevice::createInstance(DeviceDescriptor desc, VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger) {
         VkApplicationInfo appInfo{
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
             .pApplicationName = "",
@@ -216,7 +216,7 @@ namespace RHI {
         }
     }
 
-    void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice *selectedPhysicalDevice, VkPhysicalDeviceProperties *deviceProperties) {
+    void VulkanDevice::pickPhysicalDevice(VkInstance instance, VkPhysicalDevice *selectedPhysicalDevice, VkPhysicalDeviceProperties *deviceProperties) {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -239,7 +239,7 @@ namespace RHI {
         *selectedPhysicalDevice = physicalDevices[physicalDevices.size() - 1];
     }
 
-    void createLogicalDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice *device, 
+    void VulkanDevice::createLogicalDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice *device, 
         std::map<QueueType, std::vector<std::shared_ptr<Queue>>> *queues,
         std::map<QueueType, VkCommandPool> *commandPools) 
     {
@@ -327,7 +327,7 @@ namespace RHI {
                 .index = i
             };
 
-            (*queues)[QueueType::Graphic].push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue, familyIndices.graphicsFamily));
+            (*queues)[QueueType::Graphic].push_back(std::make_shared<VulkanQueue>(desc, this, vulkanQueue, familyIndices.graphicsFamily));
         }
 
         for (uint32_t i = 0; i < familyIndices.computeCount; i++) {
@@ -339,7 +339,7 @@ namespace RHI {
                 .index = i
             };
 
-            (*queues)[QueueType::Compute].push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue, familyIndices.computeFamily));
+            (*queues)[QueueType::Compute].push_back(std::make_shared<VulkanQueue>(desc, this, vulkanQueue, familyIndices.computeFamily));
         }
 
         for (uint32_t i = 0; i < familyIndices.transferCount; i++) {
@@ -351,7 +351,7 @@ namespace RHI {
                 .index = i
             };
 
-            (*queues)[QueueType::Transfer].push_back(std::make_shared<VulkanQueue>(desc, vulkanQueue, familyIndices.transferFamily));
+            (*queues)[QueueType::Transfer].push_back(std::make_shared<VulkanQueue>(desc, this, vulkanQueue, familyIndices.transferFamily));
         }
 
         VkCommandPoolCreateInfo commandPoolInfo{
@@ -420,7 +420,7 @@ namespace RHI {
         }
     }
 
-    void createMemoryAllocator(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator *memoryAllocator) {
+    void VulkanDevice::createMemoryAllocator(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator *memoryAllocator) {
         VmaAllocatorCreateInfo allocatorCreateInfo = {
             .vulkanApiVersion = VK_API_VERSION_1_3,
             .physicalDevice = physicalDevice,
@@ -433,7 +433,7 @@ namespace RHI {
         }
     }
 
-    void createDescriptorPool(VkDevice device, VkDescriptorPool* descriptorPool) {
+    void VulkanDevice::createDescriptorPool(VkDevice device, VkDescriptorPool* descriptorPool) {
         VkDescriptorType desiredDescriptor[4] = {
             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -461,27 +461,15 @@ namespace RHI {
         }
     }
 
+    VulkanDevice::VulkanDevice(DeviceDescriptor desc) : desc(desc) {
+        createInstance(desc, &instance, &this->debugMessenger);
+        pickPhysicalDevice(instance, &physicalDevice, &this->deviceProperties);
+        createLogicalDevice(instance, physicalDevice, &device, &this->queues, &this->commandPools);
+        createMemoryAllocator(instance, physicalDevice, device, &this->memoryAllocator);
+        createDescriptorPool(device, &this->descriptorPool);
+    }
+
     std::shared_ptr<Device> VulkanFactory::createDevice(DeviceDescriptor desc) {
-        VkInstance instance;
-        VkPhysicalDevice physicalDevice;
-        VkDevice device;
-
-        VkDebugUtilsMessengerEXT debugMessenger;
-        VkPhysicalDeviceProperties deviceProperties;
-        VmaAllocator memoryAllocator;
-
-        std::map<QueueType, std::vector<std::shared_ptr<Queue>>> queues;
-        std::map<QueueType, VkCommandPool> commandPools;
-        VkDescriptorPool descriptorPool;
-
-        createInstance(desc, &instance, &debugMessenger);
-        pickPhysicalDevice(instance, &physicalDevice, &deviceProperties);
-        createLogicalDevice(instance, physicalDevice, &device, &queues, &commandPools);
-        createMemoryAllocator(instance, physicalDevice, device, &memoryAllocator);
-        createDescriptorPool(device, &descriptorPool);
-
-        return std::make_shared<VulkanDevice>(desc, instance, physicalDevice, device, 
-            debugMessenger, deviceProperties, memoryAllocator, queues, commandPools,
-            descriptorPool);
+        return std::make_shared<VulkanDevice>(desc);
     }
 }

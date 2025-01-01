@@ -217,10 +217,12 @@ namespace RHI {
         std::shared_ptr<RenderPassCommandEncoder> beginRenderPass(Uint32 renderPassIndex, std::vector<TextureView*> colorTextureViews, 
             TextureView* depthStencilTextureView, Extent3D size) override
         {
-            static_cast<CommonCommandEncoder*>(this->commandEncoder)->getCommandList().emplace_back(
-                new BeginRenderPassCommand(this->renderGraph, renderPassIndex, colorTextureViews, 
-                    depthStencilTextureView, size)
-            );
+            static_cast<CommonCommandEncoder*>(this->commandEncoder)
+                ->getCommandList()
+                .emplace_back(
+                    new BeginRenderPassCommand(this->renderGraph, renderPassIndex, colorTextureViews, 
+                        depthStencilTextureView, size)
+                );
 
             return std::make_shared<CommonRenderPassCommandEncoder>(this->commandEncoder, this->renderGraph, renderPassIndex);
         }

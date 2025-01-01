@@ -13,43 +13,26 @@ namespace RHI {
 
     class VulkanDevice : public Device {
     public:
-        VulkanDevice(
-            DeviceDescriptor desc,
-            VkInstance i,
-            VkPhysicalDevice pd, 
-            VkDevice d,
-            VkDebugUtilsMessengerEXT dm,
-            VkPhysicalDeviceProperties dp,
-            VmaAllocator vma,
-            std::map<QueueType, std::vector<std::shared_ptr<Queue>>> q,
-            std::map<QueueType, VkCommandPool> c,
-            VkDescriptorPool dsp            
-        )
-        : Device(desc),
-          instance{i},
-          physicalDevice{pd}, 
-          device{d},
-          debugMessenger{dm},
-          deviceProperties{dp},
-          memoryAllocator{vma},
-          queues{q},
-          commandPools{c},
-          descriptorPool{dsp}
-        {
-
-        }
+        VulkanDevice(DeviceDescriptor desc);
 
         virtual ~VulkanDevice() {}
-        
-        VkDevice getNative() { return this->device; }
-        VmaAllocator getMemoryAllocator() { return this->memoryAllocator; }
-        VkDescriptorPool getDescriptorPool() { return this->descriptorPool; }
+
+        DeviceDescriptor getDesc() override { return this->desc; }
 
         std::shared_ptr<Buffer> createBuffer(BufferDescriptor descriptor) override;
         std::shared_ptr<Texture> createTexture(TextureDescriptor descriptor) override;
         std::shared_ptr<Sampler> createSampler(SamplerDescriptor desc) override;
         std::shared_ptr<RenderGraph> createRenderGraph(RenderGraphDescriptor desc) override;
         std::shared_ptr<ShaderModule> createShaderModule(ShaderModuleDescriptor desc) override;
+        
+        VkDevice getNative() { return this->device; }
+        VmaAllocator getMemoryAllocator() { return this->memoryAllocator; }
+        VkDescriptorPool getDescriptorPool() { return this->descriptorPool; }
+        std::map<QueueType, VkCommandPool> getCommandPools() { return this->commandPools; }
+        std::map<QueueType, std::vector<std::shared_ptr<Queue>>> getQueues() { return this->queues; }
+
+    protected:
+        DeviceDescriptor desc;
         
     private:
         VkInstance instance;
@@ -59,10 +42,18 @@ namespace RHI {
         VkDebugUtilsMessengerEXT debugMessenger;
         VkPhysicalDeviceProperties deviceProperties;
         VmaAllocator memoryAllocator;
-
-        std::map<QueueType, std::vector<std::shared_ptr<Queue>>> queues;
+        
         std::map<QueueType, VkCommandPool> commandPools;
         VkDescriptorPool descriptorPool;
+
+        std::map<QueueType, std::vector<std::shared_ptr<Queue>>> queues;
+
+        void createInstance(DeviceDescriptor desc, VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger);
+        void pickPhysicalDevice(VkInstance instance, VkPhysicalDevice *selectedPhysicalDevice, VkPhysicalDeviceProperties *deviceProperties);
+        void createLogicalDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice *device, 
+            std::map<QueueType, std::vector<std::shared_ptr<Queue>>> *queues, std::map<QueueType, VkCommandPool> *commandPools);
+        void createMemoryAllocator(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator *memoryAllocator);
+        void createDescriptorPool(VkDevice device, VkDescriptorPool* descriptorPool);
     };
 
     // ===========================================================================================================================
@@ -80,9 +71,10 @@ namespace RHI {
         : desc{desc},
           device{d}, 
           buffer{b},
-          memoryAllocation{ma}
+          memoryAllocation{ma},
+          mapState{BufferMapState::eUnmapped}
         {
-            this->mapState = BufferMapState::eUnmapped;
+
         }
 
         virtual ~VulkanBuffer();
@@ -184,10 +176,11 @@ namespace RHI {
 
     protected:
         TextureViewDescriptor desc;
-        Texture* texture;
 
     private:
         VulkanDevice* device;
+        Texture* texture;
+
         VkImageView imageView;
     };
 
@@ -347,10 +340,14 @@ namespace RHI {
     class VulkanCommandBuffer : public CommandBuffer {
     public:
         VulkanCommandBuffer(
-            VulkanDevice* d,
-            QueueType queueType
+            CommandBufferDescriptor desc,
+            VulkanDevice* d
         ) 
-        : device{d} {}
+        : desc{desc},
+          device{d} 
+        {
+
+        }
 
         virtual ~VulkanCommandBuffer();
 
@@ -398,23 +395,37 @@ namespace RHI {
     // Queue
     // ===========================================================================================================================
 
+    class VulkanQueueAsync : QueueAsync {
+    public:
+        VulkanQueueAsync(
+            VulkanDevice* d,
+            Uint32 id
+        )
+        : device{d},
+          id{id}
+        {
+            
+        }
+
+        Uint32 getSubmissionId() override { return this->id; }
+
+    private:
+        VulkanDevice* device;
+        Uint32 id;
+    };
+
     class VulkanQueue : public Queue {
     public:
         VulkanQueue(
             QueueDescriptor desc,
+            VulkanDevice* device,
             VkQueue q,
-            Uint32 fi
-        )
-        : desc{desc},
-          queue{q},
-          familyIndex{fi}
-        {
-
-        }
+            Uint32 familyIndex
+        );
 
         QueueDescriptor getDesc() override { return this->desc; }
 
-        void submit(std::vector<CommandEncoder*> commandBuffers) override;
+        std::shared_ptr<QueueAsync> submit(std::vector<CommandBuffer*> commandBuffers, std::vector<std::shared_ptr<QueueAsync>> signaled) override;
 
         VkQueue getNative() { return this->queue; }
 
@@ -424,6 +435,9 @@ namespace RHI {
         QueueDescriptor desc;
 
     private:
+        VulkanDevice* device;
+        std::vector<std::shared_ptr<QueueAsync>> queueAsyncs;
+
         VkQueue queue;
         Uint32 familyIndex;
     };
