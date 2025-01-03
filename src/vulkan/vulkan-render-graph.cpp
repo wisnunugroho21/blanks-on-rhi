@@ -2,10 +2,10 @@
 
 namespace RHI {
     std::shared_ptr<RenderGraph> VulkanDevice::createRenderGraph(RenderGraphDescriptor desc) {
-        std::vector<VulkanRenderPassNode> renderPassNodes{ desc.renderPasses.size() };
+        std::vector<VulkanRenderPassNode> renderPassNodes{ desc.passes.size() };
 
-        for (size_t i = 0; i < desc.renderPasses.size(); i++) {
-            RenderPassDescriptor renderPassDesc = desc.renderPasses[i];
+        for (size_t i = 0; i < desc.passes.size(); i++) {
+            RenderPassDescriptor renderPassDesc = desc.passes[i];
 
             std::vector<VkAttachmentDescription> attachmentsDescs;
             std::vector<VkAttachmentReference> colorAttachmentRefs;
@@ -87,14 +87,14 @@ namespace RHI {
                 throw std::runtime_error("Failed to create render pass!");
             }
 
-            renderPassNodes[i].pipelineNodes.resize(renderPassDesc.renderPipelines.size());
+            renderPassNodes[i].pipelineNodes.resize(renderPassDesc.pipelines.size());
 
-            for (size_t j = 0; j < renderPassDesc.renderPipelines.size(); j++) {
-                RenderPipelineDescriptor renderPipelineDesc = renderPassDesc.renderPipelines[j];
-                renderPassNodes[i].pipelineNodes[j].bindGroupNodes.resize(renderPipelineDesc.bindGroupLayouts.size());
+            for (size_t j = 0; j < renderPassDesc.pipelines.size(); j++) {
+                RenderPipelineDescriptor renderPipelineDesc = renderPassDesc.pipelines[j];
+                renderPassNodes[i].pipelineNodes[j].bindGroupNodes.resize(renderPipelineDesc.layout.bindGroupLayouts.size());
 
-                for (size_t k = 0; k < renderPipelineDesc.bindGroupLayouts.size(); i++) {
-                    BindGroupLayoutDescriptor bindGroupLayoutDesc = renderPipelineDesc.bindGroupLayouts[k];
+                for (size_t k = 0; k < renderPipelineDesc.layout.bindGroupLayouts.size(); i++) {
+                    BindGroupLayoutDescriptor bindGroupLayoutDesc = renderPipelineDesc.layout.bindGroupLayouts[k];
                     std::vector<VkDescriptorSetLayoutBinding> bindLayouts;
 
                     for (auto &&entry : bindGroupLayoutDesc.entries) {

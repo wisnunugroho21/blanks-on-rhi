@@ -33,7 +33,7 @@ namespace RHI {
 
         vulkanCmd->getFrameBuffers().emplace_back(fb);
 
-        RenderPassDescriptor desc = this->renderGraph->getDesc().renderPasses[renderPassIndex];
+        RenderPassDescriptor desc = this->renderGraph->getDesc().passes[renderPassIndex];
 
         std::vector<VkClearValue> clearValues;
         for (auto &&colorAttachment : desc.colorAttachments) {

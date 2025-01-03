@@ -434,6 +434,17 @@ namespace RHI {
         std::vector<BindGroupDescriptorEntry> entries;
     };
 
+    struct ConstantLayout {
+        ShaderStageFlags shaderStage;
+        Uint32 size = ULLONG_MAX;
+        Uint32 offset = 0;
+    };
+
+    struct PipelineLayoutDescriptor {
+        std::vector<BindGroupLayoutDescriptor> bindGroupLayouts;
+        std::vector<ConstantLayout> constantLayouts;
+    };
+
     // ===========================================================================================================================
     // Pipeline
     // ===========================================================================================================================
@@ -699,7 +710,7 @@ namespace RHI {
     };
 
     struct RenderPipelineDescriptor : BaseDescriptor {
-        std::vector<BindGroupLayoutDescriptor> bindGroupLayouts;
+        PipelineLayoutDescriptor layout;
 
         VertexState vertex;
         FragmentState fragment;
@@ -754,7 +765,7 @@ namespace RHI {
     };
 
     struct RenderPassDescriptor : BaseDescriptor {
-        std::vector<RenderPipelineDescriptor> renderPipelines;
+        std::vector<RenderPipelineDescriptor> pipelines;
 
         std::vector<RenderPassColorAttachment> colorAttachments;
         RenderPassDepthStencilAttachment depthStencilAttachment;
@@ -767,7 +778,7 @@ namespace RHI {
     // ===========================================================================================================================
 
     struct RenderGraphDescriptor : BaseDescriptor {
-        std::vector<RenderPassDescriptor> renderPasses;
+        std::vector<RenderPassDescriptor> passes;
     };
 
     class RenderGraph {
